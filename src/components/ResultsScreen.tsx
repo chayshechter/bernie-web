@@ -6,6 +6,7 @@ import { DEV_MODE } from '../lib/devmode'
 import { getYesterdayIsrael, getIsraelWeekBounds, getTomorrowIsrael } from '../lib/date'
 import LeaderboardModal from './LeaderboardModal'
 import ComeBackTomorrow from './ComeBackTomorrow'
+import { Analytics } from '../lib/analytics'
 
 interface ResultsScreenProps {
   results: GuessResult[]
@@ -38,6 +39,7 @@ export default function ResultsScreen({
   useEffect(() => {
     if (!didSubmit.current) {
       didSubmit.current = true
+      Analytics.gameCompleted(totalScore, themeName)
       submitScore(initialNickname)
     }
   }, [])
@@ -133,6 +135,7 @@ export default function ResultsScreen({
   }
 
   async function handleShare() {
+    Analytics.scoreShared()
     const text = generateShareText(
       themeName,
       sessionDate,

@@ -4,6 +4,7 @@ import { calculateScore, formatPrice, parseSoldPrice } from '../lib/scoring'
 import ImageCarousel from './ImageCarousel'
 import PriceSlider from './PriceSlider'
 import CountdownTimer, { type CountdownTimerHandle } from './CountdownTimer'
+import { Analytics } from '../lib/analytics'
 
 interface GameScreenProps {
   cars: Car[]
@@ -246,7 +247,7 @@ function ResultOverlay({
   )
 }
 
-export default function GameScreen({ cars, onComplete, onQuit }: GameScreenProps) {
+export default function GameScreen({ cars, themeName, onComplete, onQuit }: GameScreenProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [guess, setGuess] = useState(0)
   const [results, setResults] = useState<GuessResult[]>([])
@@ -257,6 +258,13 @@ export default function GameScreen({ cars, onComplete, onQuit }: GameScreenProps
   const lockedInRef = useRef(false)
   const autoAdvanceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
+
+  // Track game start on mount
+  const didTrackStart = useRef(false)
+  if (!didTrackStart.current) {
+    didTrackStart.current = true
+    Analytics.gameStarted(themeName)
+  }
 
   const car = cars[currentIndex]
   const price = getPrice(car)
@@ -286,9 +294,11 @@ export default function GameScreen({ cars, onComplete, onQuit }: GameScreenProps
     if (lockedInRef.current) return
     lockedInRef.current = true
 
+    const timeLeft = timerRef.current?.getTimeLeft() ?? 0
     timerRef.current?.stop()
 
     const score = calculateScore(guess, price)
+    Analytics.carLockedIn(currentIndex, score, timeLeft)
     setCurrentScore(score)
     setRevealed(true)
 
@@ -331,7 +341,7 @@ export default function GameScreen({ cars, onComplete, onQuit }: GameScreenProps
             {currentIndex + 1}/{cars.length}
           </span>
           <button
-            onClick={onQuit}
+            onClick={() => { Analytics.gameQuit(currentIndex, themeName); onQuit() }}
             className="text-[#8b949e] text-xs font-medium hover:text-white transition-colors"
           >
             x QUIT

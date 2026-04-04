@@ -3,6 +3,7 @@ import type { UserScore } from '../lib/types'
 import { guessesToEmojiGrid } from '../lib/scoring'
 import { supabase } from '../lib/supabase'
 import { getTodayIsrael, getIsraelWeekBounds } from '../lib/date'
+import { Analytics } from '../lib/analytics'
 
 interface LeaderboardModalProps {
   onClose: () => void
@@ -24,6 +25,7 @@ export default function LeaderboardModal({ onClose, currentNickname, currentScor
   const [expandedId, setExpandedId] = useState<string | null>(null)
 
   useEffect(() => {
+    Analytics.leaderboardViewed('daily')
     fetchDaily()
     fetchWeekly()
   }, [])
@@ -111,7 +113,7 @@ export default function LeaderboardModal({ onClose, currentNickname, currentScor
         {/* Tabs */}
         <div className="flex px-5 gap-1 shrink-0 mb-3">
           <button
-            onClick={() => { setTab('daily'); setExpandedId(null) }}
+            onClick={() => { setTab('daily'); setExpandedId(null); Analytics.leaderboardViewed('daily') }}
             className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-colors ${
               tab === 'daily' ? 'bg-[#e63946] text-white' : 'bg-[#161b22] text-[#8b949e]'
             }`}
@@ -119,7 +121,7 @@ export default function LeaderboardModal({ onClose, currentNickname, currentScor
             Daily
           </button>
           <button
-            onClick={() => { setTab('weekly'); setExpandedId(null) }}
+            onClick={() => { setTab('weekly'); setExpandedId(null); Analytics.leaderboardViewed('weekly') }}
             className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-colors ${
               tab === 'weekly' ? 'bg-[#e63946] text-white' : 'bg-[#161b22] text-[#8b949e]'
             }`}
