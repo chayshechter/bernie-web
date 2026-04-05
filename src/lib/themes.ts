@@ -1,6 +1,9 @@
 const THEME_EMOJI: Record<string, string> = {
   'Legends of the Road': '🏆',
   'Autobahn': '🇩🇪',
+  'La Dolce Vita': '🇮🇹',
+  'Rising Sun': '🇯🇵',
+  'British Invasion': '🇬🇧',
 }
 
 export function getThemeEmoji(themeName: string): string {

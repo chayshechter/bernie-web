@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import type { DailySession, UserScore } from '../lib/types'
 import { DEV_MODE } from '../lib/devmode'
+import { getTodayStartIsrael } from '../lib/date'
 import { supabase } from '../lib/supabase'
 import LeaderboardModal from './LeaderboardModal'
 import HowToPlay from './HowToPlay'
@@ -48,6 +49,7 @@ export default function IntroScreen({ session, streak, onStart }: IntroScreenPro
       .from('user_scores')
       .select('*')
       .eq('session_date', session.date)
+      .gte('created_at', getTodayStartIsrael())
       .not('nickname', 'ilike', 'DEV_%')
       .order('total_score', { ascending: false })
       .limit(3)

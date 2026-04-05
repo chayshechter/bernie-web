@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 
 interface ImageCarouselProps {
   images: string[]
@@ -12,12 +12,63 @@ export default function ImageCarousel({ images, alt, resetKey, current, onCurren
   const [touchStart, setTouchStart] = useState<number | null>(null)
   const [brokenSet, setBrokenSet] = useState<Set<number>>(new Set())
 
+  const validImages = images?.length ? images : []
+  const workingCount = validImages.length - brokenSet.size
+
+  // Refs for auto-scroll (no re-renders)
+  const autoScrollTimer = useRef<ReturnType<typeof setInterval> | null>(null)
+  const pauseTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const isPaused = useRef(false)
+  const currentRef = useRef(current)
+  const brokenSetRef = useRef(brokenSet)
+  currentRef.current = current
+  brokenSetRef.current = brokenSet
+
+  function stopAutoScroll() {
+    if (autoScrollTimer.current) {
+      clearInterval(autoScrollTimer.current)
+      autoScrollTimer.current = null
+    }
+    if (pauseTimer.current) {
+      clearTimeout(pauseTimer.current)
+      pauseTimer.current = null
+    }
+    isPaused.current = false
+  }
+
+  function pauseAutoScroll() {
+    isPaused.current = true
+    if (pauseTimer.current) clearTimeout(pauseTimer.current)
+    pauseTimer.current = setTimeout(() => {
+      isPaused.current = false
+    }, 5000)
+  }
+
   useEffect(() => {
     onCurrentChange(0)
     setBrokenSet(new Set())
   }, [resetKey])
 
-  const validImages = images?.length ? images : []
+  // Auto-scroll effect
+  useEffect(() => {
+    stopAutoScroll()
+    if (workingCount <= 1) return
+
+    autoScrollTimer.current = setInterval(() => {
+      if (isPaused.current) return
+      const len = validImages.length
+      const broken = brokenSetRef.current
+      let next = (currentRef.current + 1) % len
+      let attempts = 0
+      while (broken.has(next) && attempts < len) {
+        next = (next + 1) % len
+        attempts++
+      }
+      onCurrentChange(next)
+    }, 5000)
+
+    return () => { stopAutoScroll() }
+  }, [resetKey, workingCount])
 
   const handleError = useCallback((index: number) => {
     console.warn('[Bernie] Image failed to load at index', index, validImages[index])
@@ -34,7 +85,7 @@ export default function ImageCarousel({ images, alt, resetKey, current, onCurren
 
   if (!validImages.length || displayIndex === -1) {
     return (
-      <div style={{ position: 'relative', width: '100%', paddingBottom: '56.25%', background: '#111' }}>
+      <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9', background: '#111' }}>
         <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <span className="text-[#484f58] text-lg">No image available</span>
         </div>
@@ -55,6 +106,7 @@ export default function ImageCarousel({ images, alt, resetKey, current, onCurren
   }
 
   function handleTouchStart(e: React.TouchEvent) {
+    pauseAutoScroll()
     setTouchStart(e.touches[0].clientX)
   }
 
@@ -67,17 +119,12 @@ export default function ImageCarousel({ images, alt, resetKey, current, onCurren
     setTouchStart(null)
   }
 
-  const workingCount = validImages.length - brokenSet.size
-
   return (
-    <div style={{ position: 'relative', width: '100%', paddingBottom: '56.25%', background: '#111', overflow: 'hidden' }}>
+    <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9', background: '#111', overflow: 'hidden' }}>
       <img
         src={imgSrc}
         alt={alt}
         style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
           width: '100%',
           height: '100%',
           objectFit: 'cover',
@@ -92,14 +139,14 @@ export default function ImageCarousel({ images, alt, resetKey, current, onCurren
       {workingCount > 1 && (
         <>
           <button
-            onClick={() => goTo(current - 1)}
+            onClick={() => { pauseAutoScroll(); goTo(current - 1) }}
             className="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 text-white text-xl flex items-center justify-center active:bg-black/70"
             aria-label="Previous image"
           >
             ‹
           </button>
           <button
-            onClick={() => goTo(current + 1)}
+            onClick={() => { pauseAutoScroll(); goTo(current + 1) }}
             className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 text-white text-xl flex items-center justify-center active:bg-black/70"
             aria-label="Next image"
           >

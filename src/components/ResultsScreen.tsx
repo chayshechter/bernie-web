@@ -3,7 +3,7 @@ import type { Car, GuessResult, UserScore } from '../lib/types'
 import { formatPrice, getScoreEmoji, generateShareText, guessesToEmojiGrid } from '../lib/scoring'
 import { supabase } from '../lib/supabase'
 import { DEV_MODE } from '../lib/devmode'
-import { getYesterdayIsrael, getIsraelWeekBounds, getTomorrowIsrael } from '../lib/date'
+import { getYesterdayIsrael, getIsraelWeekBounds, getTomorrowIsrael, getTodayStartIsrael } from '../lib/date'
 import LeaderboardModal from './LeaderboardModal'
 import ComeBackTomorrow from './ComeBackTomorrow'
 import { Analytics } from '../lib/analytics'
@@ -54,6 +54,7 @@ export default function ResultsScreen({
       .from('user_scores')
       .select('*')
       .eq('session_date', sessionDate)
+      .gte('created_at', getTodayStartIsrael())
       .not('nickname', 'ilike', 'DEV_%')
       .order('total_score', { ascending: false })
       .limit(50)

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import type { UserScore } from '../lib/types'
 import { guessesToEmojiGrid } from '../lib/scoring'
 import { supabase } from '../lib/supabase'
-import { getTodayIsrael, getIsraelWeekBounds } from '../lib/date'
+import { getTodayIsrael, getTodayStartIsrael, getIsraelWeekBounds } from '../lib/date'
 import { Analytics } from '../lib/analytics'
 
 interface LeaderboardModalProps {
@@ -36,6 +36,7 @@ export default function LeaderboardModal({ onClose, currentNickname, currentScor
       .from('user_scores')
       .select('*')
       .eq('session_date', today)
+      .gte('created_at', getTodayStartIsrael())
       .not('nickname', 'ilike', 'DEV_%')
       .order('total_score', { ascending: false })
       .limit(50)

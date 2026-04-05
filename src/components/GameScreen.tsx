@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, memo } from 'react'
+import { useState, useEffect, useRef, useCallback, memo } from 'react'
 import type { Car, GuessResult } from '../lib/types'
 import { calculateScore, formatPrice, parseSoldPrice } from '../lib/scoring'
 import ImageCarousel from './ImageCarousel'
@@ -36,11 +36,7 @@ function buildImageList(car: Car): string[] {
   return imgs
 }
 
-function truncateToSentences(text: string, count: number): string {
-  const sentences = text.match(/[^.!?]+[.!?]+/g)
-  if (!sentences) return text
-  return sentences.slice(0, count).join(' ').trim()
-}
+const DOUG_LIMIT = 180
 
 function getPrice(car: Car): number {
   return parseSoldPrice(car.final_price)
@@ -85,13 +81,16 @@ const CarBody = memo(function CarBody({
   onGuessChange: (v: number) => void
   disabled: boolean
 }) {
+  const [expanded, setExpanded] = useState(false)
   const specs = car.specs
   const hasSpecs = specs?.Engine || specs?.Mileage || specs?.Transmission
+
+  useEffect(() => { setExpanded(false) }, [currentIndex])
 
   return (
     <>
       {/* Sub-header: prompt + car progress dots */}
-      <div className="flex items-center justify-center gap-3 pb-2 px-4">
+      <div className="flex items-center justify-center gap-3 pb-1 px-4">
         <span className="text-[#8b949e] text-xs">What did it sell for?</span>
         <div className="flex gap-1">
           {Array.from({ length: totalCars }, (_, i) => (
@@ -119,8 +118,8 @@ const CarBody = memo(function CarBody({
       />
 
       {/* Car content */}
-      <div className="flex flex-col px-4 pt-4 gap-4">
-        <h2 className="text-2xl font-bold text-white text-center">
+      <div className="flex flex-col px-3 pt-2 gap-2">
+        <h2 className="text-xl font-bold text-white text-center">
           {car.year} {car.make} {car.model}
         </h2>
 
@@ -128,19 +127,19 @@ const CarBody = memo(function CarBody({
         {hasSpecs && (
           <div className="grid grid-cols-3 gap-2">
             {specs?.Engine && (
-              <div className="bg-[#161b22] rounded-xl px-3 py-2.5 text-center">
+              <div className="bg-[#161b22] rounded-xl px-2 py-2 text-center">
                 <p className="text-[#8b949e] text-[10px] uppercase tracking-wider mb-0.5">Engine</p>
                 <p className="text-white text-xs font-semibold">{specs.Engine}</p>
               </div>
             )}
             {specs?.Mileage && (
-              <div className="bg-[#161b22] rounded-xl px-3 py-2.5 text-center">
+              <div className="bg-[#161b22] rounded-xl px-2 py-2 text-center">
                 <p className="text-[#8b949e] text-[10px] uppercase tracking-wider mb-0.5">Mileage</p>
                 <p className="text-white text-xs font-semibold">{specs.Mileage}</p>
               </div>
             )}
             {specs?.Transmission && (
-              <div className="bg-[#161b22] rounded-xl px-3 py-2.5 text-center">
+              <div className="bg-[#161b22] rounded-xl px-2 py-2 text-center">
                 <p className="text-[#8b949e] text-[10px] uppercase tracking-wider mb-0.5">Transmission</p>
                 <p className="text-white text-xs font-semibold">{specs.Transmission}</p>
               </div>
@@ -149,16 +148,30 @@ const CarBody = memo(function CarBody({
         )}
 
         {/* Doug's Take */}
-        {car.dougs_take && (
-          <div className="bg-[#161b22] border-l-[3px] border-l-[#e63946] rounded-r-xl px-4 py-3">
-            <p className="text-[#e63946] text-[10px] font-bold uppercase tracking-widest mb-1">
-              🎙️ Doug Says
-            </p>
-            <p className="text-[#c9d1d9] text-sm leading-relaxed italic">
-              "{truncateToSentences(car.dougs_take, 2)}"
-            </p>
-          </div>
-        )}
+        {car.dougs_take && (() => {
+          const isLong = car.dougs_take.length > DOUG_LIMIT
+          const displayText = expanded || !isLong
+            ? car.dougs_take
+            : car.dougs_take.slice(0, DOUG_LIMIT) + '...'
+          return (
+            <div className="bg-[#161b22] border-l-[3px] border-l-[#e63946] rounded-r-xl px-3 py-2">
+              <p className="text-[#e63946] text-[10px] font-bold uppercase tracking-widest mb-1">
+                🎙️ Doug Says
+              </p>
+              <p className="text-[#c9d1d9] text-sm leading-relaxed italic">
+                "{displayText}"
+                {isLong && (
+                  <button
+                    onClick={() => setExpanded(!expanded)}
+                    className="text-[#e63946] text-xs font-semibold ml-1 not-italic"
+                  >
+                    {expanded ? 'Read less' : 'Read more'}
+                  </button>
+                )}
+              </p>
+            </div>
+          )
+        })()}
 
         {/* Price + sliders */}
         <PriceSlider value={guess} onChange={onGuessChange} disabled={disabled} resetKey={currentIndex} />
@@ -373,10 +386,10 @@ export default function GameScreen({ cars, themeName, onComplete, onQuit }: Game
 
       {/* Lock in button */}
       {!revealed && (
-        <div className="px-4 py-4 shrink-0">
+        <div className="px-4 py-2 shrink-0">
           <button
             onClick={handleLockInClick}
-            className="w-full bg-[#e63946] hover:bg-[#d62839] active:scale-[0.98] text-white font-bold text-base uppercase tracking-wide py-4 rounded-xl transition-all"
+            className="w-full bg-[#e63946] hover:bg-[#d62839] active:scale-[0.98] text-white font-bold text-base uppercase tracking-wide py-3 rounded-xl transition-all"
           >
             Lock It In
           </button>

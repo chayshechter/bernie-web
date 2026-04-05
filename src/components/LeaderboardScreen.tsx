@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import type { UserScore } from '../lib/types'
 import { supabase } from '../lib/supabase'
+import { getTodayStartIsrael } from '../lib/date'
 import { themeWithEmoji } from '../lib/themes'
 
 interface LeaderboardScreenProps {
@@ -17,6 +18,7 @@ export default function LeaderboardScreen({ sessionDate, themeName, onBack }: Le
       .from('user_scores')
       .select('*')
       .eq('session_date', sessionDate)
+      .gte('created_at', getTodayStartIsrael())
       .not('nickname', 'ilike', 'DEV_%')
       .order('total_score', { ascending: false })
       .limit(20)

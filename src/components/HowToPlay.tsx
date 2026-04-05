@@ -223,15 +223,23 @@ export default function HowToPlay({ onClose }: HowToPlayProps) {
         {/* Navigation */}
         <div className="px-6 pb-8 shrink-0">
           {current < SLIDES.length - 1 ? (
-            <div className="flex justify-center gap-2">
-              {SLIDES.map((_, i) => (
-                <div
-                  key={i}
-                  className={`w-2 h-2 rounded-full transition-all ${
-                    i === current ? 'bg-white w-6' : 'bg-[#30363d]'
-                  }`}
-                />
-              ))}
+            <div className="space-y-3">
+              <div className="flex justify-center gap-2">
+                {SLIDES.map((_, i) => (
+                  <div
+                    key={i}
+                    className={`w-2 h-2 rounded-full transition-all ${
+                      i === current ? 'bg-white w-6' : 'bg-[#30363d]'
+                    }`}
+                  />
+                ))}
+              </div>
+              <button
+                onClick={(e) => { e.stopPropagation(); onClose() }}
+                className="text-[#8b949e] text-sm w-full text-center"
+              >
+                Skip →
+              </button>
             </div>
           ) : (
             <button
