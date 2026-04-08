@@ -5,10 +5,12 @@ import ImageCarousel from './ImageCarousel'
 import PriceSlider from './PriceSlider'
 import CountdownTimer, { type CountdownTimerHandle } from './CountdownTimer'
 import { Analytics } from '../lib/analytics'
+import { supabase } from '../lib/supabase'
 
 interface GameScreenProps {
   cars: Car[]
   themeName: string
+  playerName: string
   onComplete: (results: GuessResult[]) => void
   onQuit: () => void
 }
@@ -260,7 +262,7 @@ function ResultOverlay({
   )
 }
 
-export default function GameScreen({ cars, themeName, onComplete, onQuit }: GameScreenProps) {
+export default function GameScreen({ cars, themeName, playerName, onComplete, onQuit }: GameScreenProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [guess, setGuess] = useState(0)
   const [results, setResults] = useState<GuessResult[]>([])
@@ -269,7 +271,6 @@ export default function GameScreen({ cars, themeName, onComplete, onQuit }: Game
   const [imageIndex, setImageIndex] = useState(0)
   const timerRef = useRef<CountdownTimerHandle>(null)
   const lockedInRef = useRef(false)
-  const autoAdvanceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
 
   // Track game start on mount
@@ -285,10 +286,6 @@ export default function GameScreen({ cars, themeName, onComplete, onQuit }: Game
   const isLast = currentIndex + 1 >= cars.length
 
   const advanceToNext = useCallback((newResults: GuessResult[]) => {
-    if (autoAdvanceRef.current) {
-      clearTimeout(autoAdvanceRef.current)
-      autoAdvanceRef.current = null
-    }
     if (currentIndex + 1 < cars.length) {
       setCurrentIndex(currentIndex + 1)
       setGuess(0)
@@ -325,11 +322,18 @@ export default function GameScreen({ cars, themeName, onComplete, onQuit }: Game
     const newResults = [...results, result]
     setResults(newResults)
 
-    // Auto-dismiss after 3 seconds
-    autoAdvanceRef.current = setTimeout(() => {
-      advanceToNext(newResults)
-    }, 3000)
-  }, [guess, price, car.id, results, advanceToNext])
+    // Fire-and-forget: save guess to Supabase
+    supabase
+      .from('guesses')
+      .insert({
+        player_name: playerName,
+        car_id: car.id,
+        guessed_price: guess,
+        actual_price: price,
+        score,
+      })
+      .then()
+  }, [guess, price, car.id, results, playerName])
 
   const handleOverlayNext = useCallback(() => {
     const latestResults = [...results]
