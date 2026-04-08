@@ -5,12 +5,10 @@ import ImageCarousel from './ImageCarousel'
 import PriceSlider from './PriceSlider'
 import CountdownTimer, { type CountdownTimerHandle } from './CountdownTimer'
 import { Analytics } from '../lib/analytics'
-import { supabase } from '../lib/supabase'
 
 interface GameScreenProps {
   cars: Car[]
   themeName: string
-  playerName: string
   onComplete: (results: GuessResult[]) => void
   onQuit: () => void
 }
@@ -262,7 +260,7 @@ function ResultOverlay({
   )
 }
 
-export default function GameScreen({ cars, themeName, playerName, onComplete, onQuit }: GameScreenProps) {
+export default function GameScreen({ cars, themeName, onComplete, onQuit }: GameScreenProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [guess, setGuess] = useState(0)
   const [results, setResults] = useState<GuessResult[]>([])
@@ -321,19 +319,7 @@ export default function GameScreen({ cars, themeName, playerName, onComplete, on
 
     const newResults = [...results, result]
     setResults(newResults)
-
-    // Fire-and-forget: save guess to Supabase
-    supabase
-      .from('guesses')
-      .insert({
-        player_name: playerName,
-        car_id: car.id,
-        guessed_price: guess,
-        actual_price: price,
-        score,
-      })
-      .then()
-  }, [guess, price, car.id, results, playerName])
+  }, [guess, price, car.id, results])
 
   const handleOverlayNext = useCallback(() => {
     const latestResults = [...results]

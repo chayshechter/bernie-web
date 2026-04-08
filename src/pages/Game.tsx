@@ -107,7 +107,6 @@ export default function Game() {
       <GameScreen
         cars={cars}
         themeName={session.theme_name}
-        playerName={nickname}
         onComplete={handleComplete}
         onQuit={() => setScreen('intro')}
       />

@@ -109,6 +109,26 @@ export default function ResultsScreen({
       return
     }
 
+    // Fire-and-forget: save individual guesses to the guesses table
+    supabase
+      .from('guesses')
+      .insert(
+        results.map((r) => ({
+          player_name: name.trim(),
+          car_id: r.car_id,
+          guessed_price: r.guess,
+          actual_price: r.actual,
+          score: r.score,
+        }))
+      )
+      .then(({ error: guessErr }) => {
+        if (guessErr) {
+          console.error('[bernie] Failed to save guesses:', guessErr.message)
+        } else {
+          console.log(`[bernie] Saved ${results.length} guesses for "${name.trim()}"`)
+        }
+      })
+
     if (!DEV_MODE) {
       const lastPlayed = localStorage.getItem('bernie_last_played')
       const currentStreak = parseInt(localStorage.getItem('bernie_streak') || '0')
