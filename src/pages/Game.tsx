@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import type { Car, DailySession, GuessResult } from '../lib/types'
 import { supabase } from '../lib/supabase'
-import { getTodayIsrael } from '../lib/date'
+import { getTodayEastern } from '../lib/date'
 import IntroScreen from '../components/IntroScreen'
 import GameScreen from '../components/GameScreen'
 import ResultsScreen from '../components/ResultsScreen'
@@ -17,6 +17,23 @@ export default function Game() {
   const [nickname, setNickname] = useState('')
   const [error, setError] = useState<string | null>(null)
 
+  // One-time fix: clear stale played lock after Apr 11 theme swap.
+  // Runs synchronously before first render so IntroScreen sees the cleared state.
+  useState(() => {
+    try {
+      if (!localStorage.getItem('bernie_theme_reset_2026_04_11')) {
+        const played = localStorage.getItem('bernie_played')
+        if (played) {
+          const data = JSON.parse(played)
+          if (data?.date === '2026-04-11') {
+            localStorage.removeItem('bernie_played')
+          }
+        }
+        localStorage.setItem('bernie_theme_reset_2026_04_11', '1')
+      }
+    } catch {}
+  })
+
   const streak = parseInt(localStorage.getItem('bernie_streak') || '0')
 
   useEffect(() => {
@@ -24,7 +41,8 @@ export default function Game() {
   }, [])
 
   async function loadTodaysSession() {
-    const today = getTodayIsrael()
+    const params = new URLSearchParams(window.location.search)
+    const today = params.get('date') || getTodayEastern()
 
     const { data: sessionData, error: sessionError } = await supabase
       .from('daily_sessions')

@@ -29,9 +29,9 @@ function Slide1() {
             <p className="text-white text-[11px] font-semibold">Manual</p>
           </div>
         </div>
-        {/* Doug Says */}
+        {/* Bernie Says */}
         <div className="w-full max-w-xs bg-[#161b22] border-l-[3px] border-l-[#e63946] rounded-r-lg px-3 py-2">
-          <p className="text-[#e63946] text-[9px] font-bold uppercase tracking-widest mb-0.5">🎙️ Doug Says</p>
+          <p className="text-[#e63946] text-[9px] font-bold uppercase tracking-widest mb-0.5">🎙️ Bernie Says</p>
           <p className="text-[#c9d1d9] text-xs italic leading-relaxed">
             "The BMW 1M is incredibly rare, with less than 1,000 units sold in North America."
           </p>
@@ -40,7 +40,7 @@ function Slide1() {
       <div className="px-8 pb-4 text-center">
         <p className="text-[#e63946] text-4xl font-black">1</p>
         <p className="text-white text-xl font-bold">Study the car</p>
-        <p className="text-[#8b949e] text-sm mt-1">Check the specs and read Doug's take before you guess.</p>
+        <p className="text-[#8b949e] text-sm mt-1">Check the specs and read Bernie's take before you guess.</p>
       </div>
     </div>
   )

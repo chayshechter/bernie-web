@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import type { UserScore } from '../lib/types'
 import { guessesToEmojiGrid } from '../lib/scoring'
 import { supabase } from '../lib/supabase'
-import { getTodayIsrael, getTodayStartIsrael, getIsraelWeekBounds } from '../lib/date'
+import { getTodayEastern, getTodayStartEastern, getEasternWeekBounds } from '../lib/date'
 import { Analytics } from '../lib/analytics'
 
 interface LeaderboardModalProps {
@@ -31,20 +31,19 @@ export default function LeaderboardModal({ onClose, currentNickname, currentScor
   }, [])
 
   async function fetchDaily() {
-    const today = getTodayIsrael()
+    const today = getTodayEastern()
     const { data } = await supabase
       .from('user_scores')
       .select('*')
       .eq('session_date', today)
-      .gte('created_at', getTodayStartIsrael())
+      .gte('created_at', getTodayStartEastern())
       .not('nickname', 'ilike', 'DEV_%')
       .order('total_score', { ascending: false })
-      .limit(50)
     if (data) setDaily(data)
   }
 
   async function fetchWeekly() {
-    const { start, end } = getIsraelWeekBounds()
+    const { start, end } = getEasternWeekBounds()
     const { data } = await supabase
       .from('user_scores')
       .select('*')

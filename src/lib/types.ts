@@ -12,6 +12,7 @@ export interface Car {
     Transmission?: string
   } | null
   dougs_take: string | null
+  description: string | null
 }
 
 export interface DailySession {

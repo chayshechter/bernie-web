@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
 import type { DailySession, UserScore } from '../lib/types'
 import { DEV_MODE } from '../lib/devmode'
-import { getTodayStartIsrael } from '../lib/date'
+import { getTodayStartEastern } from '../lib/date'
 import { supabase } from '../lib/supabase'
 import LeaderboardModal from './LeaderboardModal'
 import HowToPlay from './HowToPlay'
+import ComeBackTomorrow from './ComeBackTomorrow'
 import { themeWithEmoji } from '../lib/themes'
 
 interface IntroScreenProps {
@@ -49,7 +50,7 @@ export default function IntroScreen({ session, streak, onStart }: IntroScreenPro
       .from('user_scores')
       .select('*')
       .eq('session_date', session.date)
-      .gte('created_at', getTodayStartIsrael())
+      .gte('created_at', getTodayStartEastern())
       .not('nickname', 'ilike', 'DEV_%')
       .order('total_score', { ascending: false })
       .limit(3)
@@ -156,14 +157,12 @@ export default function IntroScreen({ session, streak, onStart }: IntroScreenPro
 
           <button
             onClick={() => setShowModal(true)}
-            className="bg-[#e63946] hover:bg-[#d62839] text-white font-bold text-sm px-8 py-3 rounded-xl transition-all mb-3"
+            className="bg-[#e63946] hover:bg-[#d62839] text-white font-bold text-sm px-8 py-3 rounded-xl transition-all mb-4"
           >
             View Leaderboard
           </button>
 
-          <p className="text-[#484f58] text-xs mt-2">
-            Come back tomorrow for a new set of cars
-          </p>
+          <ComeBackTomorrow />
         </>
       ) : (
         <>

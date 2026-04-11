@@ -36,7 +36,7 @@ function buildImageList(car: Car): string[] {
   return imgs
 }
 
-const DOUG_LIMIT = 180
+const BERNIE_LIMIT = 180
 
 function getPrice(car: Car): number {
   return parseSoldPrice(car.final_price)
@@ -147,16 +147,19 @@ const CarBody = memo(function CarBody({
           </div>
         )}
 
-        {/* Doug's Take */}
-        {car.dougs_take && (() => {
-          const isLong = car.dougs_take.length > DOUG_LIMIT
+        {/* Bernie Says */}
+        {(() => {
+          const summary = car.dougs_take
+            ?? (car.description ? car.description.slice(0, 300) + '...' : null)
+          if (!summary) return null
+          const isLong = summary.length > BERNIE_LIMIT
           const displayText = expanded || !isLong
-            ? car.dougs_take
-            : car.dougs_take.slice(0, DOUG_LIMIT) + '...'
+            ? summary
+            : summary.slice(0, BERNIE_LIMIT) + '...'
           return (
             <div className="bg-[#161b22] border-l-[3px] border-l-[#e63946] rounded-r-xl px-3 py-2">
               <p className="text-[#e63946] text-[10px] font-bold uppercase tracking-widest mb-1">
-                🎙️ Doug Says
+                🎙️ Bernie Says
               </p>
               <p className="text-[#c9d1d9] text-sm leading-relaxed italic">
                 "{displayText}"

@@ -3,7 +3,7 @@ import type { Car, GuessResult, UserScore } from '../lib/types'
 import { formatPrice, getScoreEmoji, generateShareText, guessesToEmojiGrid } from '../lib/scoring'
 import { supabase } from '../lib/supabase'
 import { DEV_MODE } from '../lib/devmode'
-import { getYesterdayIsrael, getIsraelWeekBounds, getTomorrowIsrael, getTodayStartIsrael } from '../lib/date'
+import { getYesterdayEastern, getEasternWeekBounds, getTodayStartEastern } from '../lib/date'
 import LeaderboardModal from './LeaderboardModal'
 import ComeBackTomorrow from './ComeBackTomorrow'
 import { Analytics } from '../lib/analytics'
@@ -54,15 +54,14 @@ export default function ResultsScreen({
       .from('user_scores')
       .select('*')
       .eq('session_date', sessionDate)
-      .gte('created_at', getTodayStartIsrael())
+      .gte('created_at', getTodayStartEastern())
       .not('nickname', 'ilike', 'DEV_%')
       .order('total_score', { ascending: false })
-      .limit(50)
     if (data) setLeaderboard(data)
   }
 
   async function fetchWeekly() {
-    const { start, end } = getIsraelWeekBounds()
+    const { start, end } = getEasternWeekBounds()
     const { data } = await supabase
       .from('user_scores')
       .select('*')
@@ -132,7 +131,7 @@ export default function ResultsScreen({
     if (!DEV_MODE) {
       const lastPlayed = localStorage.getItem('bernie_last_played')
       const currentStreak = parseInt(localStorage.getItem('bernie_streak') || '0')
-      const yesterdayStr = getYesterdayIsrael()
+      const yesterdayStr = getYesterdayEastern()
 
       const newStreak = lastPlayed === yesterdayStr ? currentStreak + 1 : 1
       try {
@@ -257,7 +256,7 @@ export default function ResultsScreen({
       </div>
 
       {/* Streak + Tomorrow */}
-      <ComeBackTomorrow tomorrowDate={getTomorrowIsrael()} />
+      <ComeBackTomorrow />
 
       {/* Breakdown */}
       <div className="w-full max-w-lg space-y-2 mb-8 mt-8">
