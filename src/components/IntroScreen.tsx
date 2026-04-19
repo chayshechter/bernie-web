@@ -7,6 +7,8 @@ import LeaderboardModal from './LeaderboardModal'
 import HowToPlay from './HowToPlay'
 import ComeBackTomorrow from './ComeBackTomorrow'
 import FeedbackModal from './FeedbackModal'
+import HelpMenu from './HelpMenu'
+import type { HelpAction } from './HelpMenu'
 import { themeWithEmoji } from '../lib/themes'
 
 interface IntroScreenProps {
@@ -34,6 +36,8 @@ export default function IntroScreen({ session, streak, onStart }: IntroScreenPro
   const [showModal, setShowModal] = useState(false)
   const [showHowTo, setShowHowTo] = useState(false)
   const [showFeedback, setShowFeedback] = useState(false)
+  const [showHelpMenu, setShowHelpMenu] = useState(false)
+  const [feedbackCategory, setFeedbackCategory] = useState<'bug' | 'suggestion'>('suggestion')
   const hasSeenHowTo = (() => {
     try { return !!localStorage.getItem('bernie_seen_howtoplay') } catch { return true }
   })()
@@ -88,8 +92,9 @@ export default function IntroScreen({ session, streak, onStart }: IntroScreenPro
           </span>
         )}
         <button
-          onClick={() => setShowHowTo(true)}
+          onClick={() => setShowHelpMenu(true)}
           className="w-7 h-7 rounded-full bg-[#161b22] border border-[#30363d] text-[#8b949e] text-xs font-bold flex items-center justify-center hover:text-white transition-colors"
+          aria-label="Help menu"
         >
           ?
         </button>
@@ -221,14 +226,26 @@ export default function IntroScreen({ session, streak, onStart }: IntroScreenPro
         }} />
       )}
 
-      <button
-        onClick={() => setShowFeedback(true)}
-        className="text-[#484f58] text-xs hover:text-[#8b949e] transition-colors mt-6 mb-4"
-      >
-        Feedback
-      </button>
+      {showHelpMenu && (
+        <HelpMenu
+          onClose={() => setShowHelpMenu(false)}
+          onSelect={(action: HelpAction) => {
+            setShowHelpMenu(false)
+            if (action === 'how-to-play') {
+              setShowHowTo(true)
+            } else {
+              setFeedbackCategory(action === 'bug' ? 'bug' : 'suggestion')
+              setShowFeedback(true)
+            }
+          }}
+        />
+      )}
 
-      <FeedbackModal isOpen={showFeedback} onClose={() => setShowFeedback(false)} />
+      <FeedbackModal
+        isOpen={showFeedback}
+        onClose={() => setShowFeedback(false)}
+        initialCategory={feedbackCategory}
+      />
     </div>
   )
 }

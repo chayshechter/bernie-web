@@ -9,6 +9,7 @@ interface FeedbackModalProps {
   isOpen: boolean
   onClose: () => void
   context?: Record<string, unknown>
+  initialCategory?: Category
 }
 
 const CATEGORIES: { value: Category; label: string }[] = [
@@ -49,8 +50,8 @@ function getAppVersion(): string {
   }
 }
 
-export default function FeedbackModal({ isOpen, onClose, context }: FeedbackModalProps) {
-  const [category, setCategory] = useState<Category>('suggestion')
+export default function FeedbackModal({ isOpen, onClose, context, initialCategory }: FeedbackModalProps) {
+  const [category, setCategory] = useState<Category>(initialCategory ?? 'suggestion')
   const [message, setMessage] = useState('')
   const [email, setEmail] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -73,14 +74,14 @@ export default function FeedbackModal({ isOpen, onClose, context }: FeedbackModa
 
   useEffect(() => {
     if (isOpen) {
-      setCategory('suggestion')
+      setCategory(initialCategory ?? 'suggestion')
       setMessage('')
       setEmail('')
       setSubmitting(false)
       setSubmitted(false)
       setError(null)
     }
-  }, [isOpen])
+  }, [isOpen, initialCategory])
 
   if (!isOpen) return null
 
