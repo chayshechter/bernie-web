@@ -6,6 +6,7 @@ import { DEV_MODE } from '../lib/devmode'
 import { getYesterdayEastern, getEasternWeekBounds, getTodayStartEastern } from '../lib/date'
 import LeaderboardModal from './LeaderboardModal'
 import ComeBackTomorrow from './ComeBackTomorrow'
+import FeedbackModal from './FeedbackModal'
 import { Analytics } from '../lib/analytics'
 
 interface ResultsScreenProps {
@@ -34,6 +35,7 @@ export default function ResultsScreen({
   const [weeklyLb, setWeeklyLb] = useState<{ nickname: string; weeklyScore: number; daysPlayed: number }[]>([])
   const [expandedRow, setExpandedRow] = useState<string | null>(null)
   const [showModal, setShowModal] = useState(false)
+  const [showFeedback, setShowFeedback] = useState(false)
   const didSubmit = useRef(false)
 
   useEffect(() => {
@@ -246,12 +248,21 @@ export default function ResultsScreen({
       </div>
 
       {/* Share button — primary CTA, above everything else */}
-      <div className="w-full max-w-lg mb-8">
+      <div className="w-full max-w-lg mb-3">
         <button
           onClick={handleShare}
           className="w-full bg-[#e63946] hover:bg-[#d62839] active:scale-[0.98] text-white font-bold text-lg py-4 rounded-xl transition-all shadow-[0_0_30px_rgba(230,57,70,0.3)]"
         >
           {shared ? '✓ Copied!' : '🏎️ Share My Score'}
+        </button>
+      </div>
+
+      <div className="w-full max-w-lg mb-8">
+        <button
+          onClick={() => setShowFeedback(true)}
+          className="w-full bg-[#161b22] border border-[#30363d] hover:border-[#484f58] text-[#8b949e] hover:text-white font-semibold text-sm py-3 rounded-xl transition-colors"
+        >
+          Send Feedback
         </button>
       </div>
 
@@ -413,6 +424,16 @@ export default function ResultsScreen({
           currentScore={totalScore}
         />
       )}
+
+      <FeedbackModal
+        isOpen={showFeedback}
+        onClose={() => setShowFeedback(false)}
+        context={{
+          final_score: totalScore,
+          last_car_id: results.length > 0 ? results[results.length - 1].car_id : null,
+          screen: 'results',
+        }}
+      />
     </div>
   )
 }

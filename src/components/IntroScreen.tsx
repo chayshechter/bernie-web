@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabase'
 import LeaderboardModal from './LeaderboardModal'
 import HowToPlay from './HowToPlay'
 import ComeBackTomorrow from './ComeBackTomorrow'
+import FeedbackModal from './FeedbackModal'
 import { themeWithEmoji } from '../lib/themes'
 
 interface IntroScreenProps {
@@ -32,6 +33,7 @@ export default function IntroScreen({ session, streak, onStart }: IntroScreenPro
   const [top3, setTop3] = useState<UserScore[]>([])
   const [showModal, setShowModal] = useState(false)
   const [showHowTo, setShowHowTo] = useState(false)
+  const [showFeedback, setShowFeedback] = useState(false)
   const hasSeenHowTo = (() => {
     try { return !!localStorage.getItem('bernie_seen_howtoplay') } catch { return true }
   })()
@@ -218,6 +220,15 @@ export default function IntroScreen({ session, streak, onStart }: IntroScreenPro
           }
         }} />
       )}
+
+      <button
+        onClick={() => setShowFeedback(true)}
+        className="text-[#484f58] text-xs hover:text-[#8b949e] transition-colors mt-6 mb-4"
+      >
+        Feedback
+      </button>
+
+      <FeedbackModal isOpen={showFeedback} onClose={() => setShowFeedback(false)} />
     </div>
   )
 }
