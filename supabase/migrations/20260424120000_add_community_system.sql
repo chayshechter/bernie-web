@@ -41,13 +41,8 @@ alter table public.daily_sessions rename to daily_sets;
 alter table public.daily_sets
   add column if not exists created_at timestamptz not null default now();
 
--- Shape guard for car_ids. NOT VALID so existing rows are not re-checked;
--- they may have been inserted manually via the SQL editor and could fail.
--- New rows must be arrays. Run ALTER ... VALIDATE CONSTRAINT after auditing.
-alter table public.daily_sets
-  add constraint daily_sets_car_ids_is_array
-  check (jsonb_typeof(car_ids) = 'array') not valid;
-
+-- car_ids is uuid[] on the existing table; Postgres enforces the array shape
+-- at the type level, so no explicit CHECK is needed.
 -- date already has a UNIQUE constraint → unique index auto-created.
 
 
@@ -181,7 +176,7 @@ as $$
   select exists (
     select 1 from public.daily_sets
     where date = public.today_eastern()
-      and car_ids ? car_uuid::text
+      and car_uuid = any(car_ids)
   );
 $$;
 
