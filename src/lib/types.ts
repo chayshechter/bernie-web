@@ -15,7 +15,7 @@ export interface Car {
   description: string | null
 }
 
-export interface DailySession {
+export interface DailySet {
   id: string
   date: string
   theme_name: string

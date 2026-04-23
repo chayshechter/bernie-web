@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import type { Car, DailySession, GuessResult } from '../lib/types'
+import type { Car, DailySet, GuessResult } from '../lib/types'
 import { supabase } from '../lib/supabase'
 import { getTodayEastern } from '../lib/date'
 import IntroScreen from '../components/IntroScreen'
@@ -11,7 +11,7 @@ type Screen = 'loading' | 'intro' | 'game' | 'results' | 'leaderboard'
 
 export default function Game() {
   const [screen, setScreen] = useState<Screen>('loading')
-  const [session, setSession] = useState<DailySession | null>(null)
+  const [session, setSession] = useState<DailySet | null>(null)
   const [cars, setCars] = useState<Car[]>([])
   const [results, setResults] = useState<GuessResult[]>([])
   const [nickname, setNickname] = useState('')
@@ -45,7 +45,7 @@ export default function Game() {
     const today = params.get('date') || getTodayEastern()
 
     const { data: sessionData, error: sessionError } = await supabase
-      .from('daily_sessions')
+      .from('daily_sets')
       .select('*')
       .eq('date', today)
       .single()

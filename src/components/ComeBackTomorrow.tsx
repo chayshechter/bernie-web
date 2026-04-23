@@ -22,7 +22,7 @@ export default function ComeBackTomorrow() {
 
   useEffect(() => {
     supabase
-      .from('daily_sessions')
+      .from('daily_sets')
       .select('theme_name')
       .eq('date', tomorrowDate)
       .single()

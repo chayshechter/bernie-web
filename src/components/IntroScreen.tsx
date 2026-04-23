@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import type { DailySession, UserScore } from '../lib/types'
+import type { DailySet, UserScore } from '../lib/types'
 import { DEV_MODE } from '../lib/devmode'
 import { getTodayStartEastern } from '../lib/date'
 import { supabase } from '../lib/supabase'
@@ -12,7 +12,7 @@ import type { HelpAction } from './HelpMenu'
 import { themeWithEmoji } from '../lib/themes'
 
 interface IntroScreenProps {
-  session: DailySession
+  session: DailySet
   streak: number
   onStart: (nickname: string) => void
   onViewLeaderboard: () => void
