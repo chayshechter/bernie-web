@@ -382,9 +382,10 @@ export default function GameScreen({ cars, themeName, onComplete, onQuit }: Game
         <div className="px-4 py-2 shrink-0">
           <button
             onClick={handleLockInClick}
-            className="w-full bg-[#e63946] hover:bg-[#d62839] active:scale-[0.98] text-white font-bold text-base uppercase tracking-wide py-3 rounded-xl transition-all"
+            disabled={guess <= 0}
+            className="w-full bg-[#e63946] hover:bg-[#d62839] active:scale-[0.98] text-white font-bold text-base uppercase tracking-wide py-3 rounded-xl transition-all disabled:bg-[#21262d] disabled:text-[#6e7681] disabled:cursor-not-allowed disabled:hover:bg-[#21262d] disabled:active:scale-100"
           >
-            Lock It In
+            {guess > 0 ? 'Lock It In' : 'Enter a price'}
           </button>
         </div>
       )}
