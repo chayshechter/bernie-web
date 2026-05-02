@@ -195,6 +195,16 @@ export default function ResultsScreen({
 
   const carMap = new Map(cars.map((c) => [c.id, c]))
 
+  const dailyRankLabel = (() => {
+    if (submitState !== 'saved') return null
+    const total = leaderboard.length
+    if (total <= 1) return null
+    const higher = leaderboard.filter((e) => e.total_score > totalScore).length
+    const rank = higher + 1
+    if (rank <= 100) return `#${rank} today`
+    return `Top ${Math.round((rank / total) * 100)}% today`
+  })()
+
   return (
     <div className="min-h-screen bg-[#0d1117] flex flex-col items-center px-4 py-10">
       {/* Score hero */}
@@ -202,6 +212,9 @@ export default function ResultsScreen({
         <p className="text-[#8b949e] text-xs uppercase tracking-widest mb-2">Your Score</p>
         <p className="text-7xl sm:text-8xl font-black text-white">{totalScore}</p>
         <p className="text-[#8b949e] text-lg mt-1">/ 1000</p>
+        {dailyRankLabel && (
+          <p className="text-[#484f58] text-sm mt-1">{dailyRankLabel}</p>
+        )}
         <div className="flex justify-center gap-1 mt-4">
           {results.map((r, i) => (
             <span key={i} className="text-2xl">{getScoreEmoji(r.score)}</span>
