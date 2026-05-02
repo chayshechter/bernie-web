@@ -13,6 +13,7 @@ export interface Car {
   } | null
   dougs_take: string | null
   description: string | null
+  sale_date: string | null
 }
 
 export interface DailySet {

@@ -6,9 +6,16 @@ interface ImageCarouselProps {
   resetKey?: string | number
   current: number
   onCurrentChange: (index: number) => void
+  saleDate?: string | null
 }
 
-export default function ImageCarousel({ images, alt, resetKey, current, onCurrentChange }: ImageCarouselProps) {
+function formatSaleDate(saleDate: string): string {
+  // Anchor at noon to avoid UTC->local day-shift (same pattern as IntroScreen.tsx)
+  const date = new Date(saleDate + 'T12:00:00')
+  return `Sold ${new Intl.DateTimeFormat('en-US', { month: 'short', year: 'numeric' }).format(date)}`
+}
+
+export default function ImageCarousel({ images, alt, resetKey, current, onCurrentChange, saleDate }: ImageCarouselProps) {
   const [touchStart, setTouchStart] = useState<number | null>(null)
   const [brokenSet, setBrokenSet] = useState<Set<number>>(new Set())
 
@@ -135,6 +142,14 @@ export default function ImageCarousel({ images, alt, resetKey, current, onCurren
         onError={() => handleError(displayIndex)}
         draggable={false}
       />
+
+      {saleDate && (
+        <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-sm rounded-full px-2.5 py-1 pointer-events-none">
+          <span className="text-white text-[10px] font-bold uppercase tracking-widest">
+            {formatSaleDate(saleDate)}
+          </span>
+        </div>
+      )}
 
       {workingCount > 1 && (
         <>
