@@ -115,6 +115,7 @@ const CarBody = memo(function CarBody({
         resetKey={currentIndex}
         current={imageIndex}
         onCurrentChange={onImageChange}
+        saleDate={car.sale_date}
       />
 
       {/* Car content */}
