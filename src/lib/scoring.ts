@@ -33,5 +33,5 @@ export function generateShareText(
   totalScore: number
 ): string {
   const emojiGrid = scores.map((s) => getScoreEmoji(s)).join('')
-  return `🏎️ Bernie Daily — ${themeName}\n📅 ${date}\n\n${emojiGrid}\n\n🏆 ${totalScore}/1000\n\nCan you beat me? → https://bernie-web.vercel.app`
+  return `🏎️ Bernie Daily — ${themeName}\n📅 ${date}\n\n${emojiGrid}\n\n🏆 ${totalScore}/1000\n\nCan you beat me? → https://berniedaily.com`
 }

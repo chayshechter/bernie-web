@@ -374,7 +374,7 @@ There is **no rendered image share card**. "Share" copies the following plain te
 
 🏆 {totalScore}/1000
 
-Can you beat me? → https://bernie-web.vercel.app
+Can you beat me? → https://berniedaily.com
 ```
 This is what propagates the brand virally; the "visual language" of BERNIE in external feeds is literally the 10 colored emoji squares + the 🏎️ 🏆 emojis.
 
