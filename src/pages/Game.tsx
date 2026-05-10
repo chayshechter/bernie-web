@@ -37,6 +37,16 @@ export default function Game() {
   const streak = parseInt(localStorage.getItem('bernie_streak') || '0')
 
   useEffect(() => {
+    if ('scrollRestoration' in history) {
+      history.scrollRestoration = 'manual'
+    }
+  }, [])
+
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [screen])
+
+  useEffect(() => {
     loadTodaysSession()
   }, [])
 
