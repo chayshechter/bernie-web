@@ -1,15 +1,13 @@
-import { useState, useEffect } from 'react'
-import type { DailySet, UserScore } from '../lib/types'
+import { useState } from 'react'
+import type { DailySet } from '../lib/types'
 import { DEV_MODE } from '../lib/devmode'
-import { getTodayStartEastern } from '../lib/date'
-import { supabase } from '../lib/supabase'
+import { getPuzzleNumber, formatIssueDate } from '../lib/date'
 import LeaderboardModal from './LeaderboardModal'
 import HowToPlay from './HowToPlay'
 import ComeBackTomorrow from './ComeBackTomorrow'
 import FeedbackModal from './FeedbackModal'
 import HelpMenu from './HelpMenu'
 import type { HelpAction } from './HelpMenu'
-import { themeWithEmoji } from '../lib/themes'
 
 interface IntroScreenProps {
   session: DailySet
@@ -28,11 +26,10 @@ function getPlayedToday(sessionDate: string): { nickname: string; score: number 
   return null
 }
 
-export default function IntroScreen({ session, streak, onStart }: IntroScreenProps) {
+export default function IntroScreen({ session, onStart }: IntroScreenProps) {
   const [nickname, setNickname] = useState(() => {
     try { return localStorage.getItem('bernie_nickname') || '' } catch { return '' }
   })
-  const [top3, setTop3] = useState<UserScore[]>([])
   const [showModal, setShowModal] = useState(false)
   const [showHowTo, setShowHowTo] = useState(false)
   const [showFeedback, setShowFeedback] = useState(false)
@@ -42,32 +39,12 @@ export default function IntroScreen({ session, streak, onStart }: IntroScreenPro
     try { return !!localStorage.getItem('bernie_seen_howtoplay') } catch { return true }
   })()
 
-  const dateFormatted = new Date(session.date + 'T00:00:00').toLocaleDateString('en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  })
-
   const played = DEV_MODE ? null : getPlayedToday(session.date)
-
-  useEffect(() => {
-    supabase
-      .from('user_scores')
-      .select('*')
-      .eq('session_date', session.date)
-      .gte('created_at', getTodayStartEastern())
-      .not('nickname', 'ilike', 'DEV_%')
-      .order('total_score', { ascending: false })
-      .limit(3)
-      .then(({ data }) => {
-        if (data) setTop3(data)
-      })
-  }, [session.date])
+  const issueNumber = String(getPuzzleNumber(session.date)).padStart(3, '0')
+  const issueDate = formatIssueDate(session.date)
 
   function handlePlay() {
     if (!nickname.trim()) return
-    // Intercept first play to show How to Play
     if (!hasSeenHowTo) {
       setShowHowTo(true)
       return
@@ -83,129 +60,121 @@ export default function IntroScreen({ session, streak, onStart }: IntroScreenPro
     onStart(name)
   }
 
+  const ctaShadow = '0 1px 0 rgba(255,255,255,0.08) inset, 0 8px 24px -10px rgba(230,57,70,0.6)'
+
   return (
-    <div className="min-h-screen bg-[#0d1117] flex flex-col items-center px-6 text-center pt-8 sm:pt-14 relative">
-      <div className="absolute top-3 right-3 flex items-center gap-2">
-        {DEV_MODE && (
-          <span className="text-[10px] font-mono font-bold bg-[#f97316]/20 text-[#f97316] px-2 py-0.5 rounded">
-            DEV
-          </span>
-        )}
-        <button
-          onClick={() => setShowHelpMenu(true)}
-          className="w-7 h-7 rounded-full bg-[#161b22] border border-[#30363d] text-[#8b949e] text-xs font-bold flex items-center justify-center hover:text-white transition-colors"
-          aria-label="Help menu"
-        >
-          ?
-        </button>
-      </div>
-      <div className="mb-4">
-        <h1 className="text-5xl sm:text-6xl font-black text-white tracking-tighter">
-          BERNIE
-        </h1>
-        <p className="text-[#e63946] font-semibold text-base tracking-widest uppercase mt-0.5">
-          Daily
-        </p>
-      </div>
+    <>
+      <div className="min-h-dvh bg-[#0d1117] flex flex-col justify-between px-6 pt-4 sm:pt-10 pb-4 sm:pb-6 relative">
+        <div className="absolute top-3 right-3 flex items-center gap-2 z-10">
+          {DEV_MODE && (
+            <span className="text-[10px] font-mono font-bold bg-[#f97316]/20 text-[#f97316] px-2 py-0.5 rounded">
+              DEV
+            </span>
+          )}
+          <button
+            onClick={() => setShowHelpMenu(true)}
+            className="w-7 h-7 rounded-full bg-[#161b22] border border-[#30363d] text-[#8b949e] text-xs font-bold flex items-center justify-center hover:text-white transition-colors"
+            aria-label="Help menu"
+          >
+            ?
+          </button>
+        </div>
 
-      <p className="text-[#8b949e] text-xs mb-1">{dateFormatted}</p>
+        {/* TOP GROUP */}
+        <div>
+          <div className="flex justify-between items-center font-mono text-[10.5px] font-medium tracking-[0.16em] text-[#7a818d] border-b border-white/[0.06] pb-3 pr-10">
+            <span>NO. {issueNumber}</span>
+            <span>{issueDate}</span>
+          </div>
 
-      {session.season_name && (
-        <p className="text-[#484f58] text-[10px] uppercase tracking-widest mb-1">
-          {session.season_name}
-        </p>
-      )}
+          <h1
+            className={`mt-5 sm:mt-7 font-display text-center text-white leading-[0.85] tracking-[-0.02em] ${
+              played ? 'text-[44px]' : 'text-[56px]'
+            }`}
+          >
+            BERNIE
+          </h1>
 
-      <div className="bg-[#161b22] border border-[#30363d] rounded-2xl px-6 py-4 mb-4 max-w-sm w-full">
-        <p className="text-[#8b949e] text-[10px] uppercase tracking-widest mb-1">Today's Theme</p>
-        <h2 className="text-xl sm:text-2xl font-bold text-white">
-          {themeWithEmoji(session.theme_name)}
-        </h2>
-        <p className="text-[#484f58] text-xs mt-1">
-          {session.car_ids.length} cars · Guess the sold price
-        </p>
-      </div>
-
-      {/* Top 3 peek */}
-      <div className="w-full max-w-sm mb-4">
-        {top3.length > 0 ? (
-          <div>
-            {top3.map((entry, i) => (
-              <div key={entry.id} className="flex items-center justify-between px-3 py-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-[#484f58] text-xs font-bold w-5 text-right">
-                    {i === 0 ? '👑' : `#${i + 1}`}
-                  </span>
-                  <span className="text-[#8b949e] text-xs">{entry.nickname}</span>
-                </div>
-                <span className="text-[#8b949e] text-xs font-medium">{entry.total_score} pts</span>
+          {played ? (
+            <>
+              <div className="mt-6 sm:mt-9 text-center">
+                <p className="text-[11px] font-bold tracking-[0.2em] text-[#7a818d] mb-3.5">
+                  ALREADY PLAYED — {session.theme_name.toUpperCase()}
+                </p>
+                <p className="font-display text-white text-[108px] leading-[0.85] tracking-[-0.05em]">
+                  {played.score}
+                </p>
+                <p className="mt-1.5 font-mono text-[13px] tracking-[0.14em] text-[#535862]">
+                  OUT OF 1000
+                </p>
               </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-[#484f58] text-xs">No scores yet today — be the first! 🏁</p>
-        )}
-        <button
-          onClick={() => setShowModal(true)}
-          className="text-[#8b949e] text-xs hover:text-white transition-colors mt-1"
-        >
-          View full leaderboard →
-        </button>
-      </div>
 
-      {played ? (
-        <>
-          <div className="bg-[#161b22] border border-[#30363d] rounded-2xl px-6 py-4 mb-4 max-w-sm w-full">
-            <p className="text-[#8b949e] text-[10px] uppercase tracking-widest mb-2">Already Played</p>
-            <p className="text-white font-bold text-sm mb-1">{played.nickname}</p>
-            <p className="text-4xl font-black text-white mb-0.5">{played.score}</p>
-            <p className="text-[#8b949e] text-xs">/ 1000</p>
-          </div>
+              <div className="mt-7">
+                <ComeBackTomorrow />
+              </div>
+            </>
+          ) : (
+            <>
+              <h2 className="mt-6 sm:mt-9 text-center text-white text-[32px] font-extrabold leading-[1.12] tracking-[-0.02em] text-balance">
+                Guess the price.<br />10 cars. Every day.
+              </h2>
 
+              <div className="mt-5 sm:mt-7 flex flex-col items-center gap-2.5">
+                <span className="text-[10px] font-bold tracking-[0.22em] text-[#7a818d]">
+                  TODAY'S SET
+                </span>
+                <div className="inline-flex items-center gap-3 px-4 py-2.5 rounded-[10px] bg-[rgba(245,158,11,0.06)] border border-[rgba(245,158,11,0.55)]">
+                  <span className="w-2 h-2 bg-[#f59e0b] rounded-[2px]" />
+                  <span className="font-display text-base text-white tracking-[0.04em]">
+                    {session.theme_name}
+                  </span>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* BOTTOM GROUP */}
+        {played ? (
           <button
             onClick={() => setShowModal(true)}
-            className="bg-[#e63946] hover:bg-[#d62839] text-white font-bold text-sm px-8 py-3 rounded-xl transition-all mb-4"
+            className="w-full bg-[#e63946] hover:bg-[#d62839] text-white font-bold text-[17px] tracking-[0.01em] py-[18px] rounded-[14px] transition-colors"
+            style={{ boxShadow: ctaShadow }}
           >
-            View Leaderboard
+            View leaderboard
           </button>
-
-          <ComeBackTomorrow />
-        </>
-      ) : (
-        <>
-          {streak > 0 && (
-            <div className="mb-3 flex items-center gap-1.5">
-              <span className="text-lg">🔥</span>
-              <span className="text-white font-bold text-sm">{streak} day streak</span>
+        ) : (
+          <div className="flex flex-col gap-3 sm:gap-3.5">
+            <div>
+              <p className="text-[11px] font-semibold tracking-[0.14em] text-[#7a818d] mb-2.5">
+                YOUR NAME
+              </p>
+              <input
+                type="text"
+                value={nickname}
+                onChange={(e) => setNickname(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handlePlay()}
+                placeholder="Enter your name"
+                maxLength={20}
+                className="w-full bg-transparent border border-white/[0.06] rounded-xl px-[18px] py-4 text-white text-base placeholder-[#535862] outline-none focus:border-[#e63946]/60 transition-colors"
+              />
             </div>
-          )}
 
-          <div className="w-full max-w-sm mb-4">
-            <p className="text-[#8b949e] text-[10px] uppercase tracking-widest mb-1.5">Your Name</p>
-            <input
-              type="text"
-              value={nickname}
-              onChange={(e) => setNickname(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handlePlay()}
-              placeholder="Enter your name"
-              maxLength={20}
-              className="w-full bg-[#0d1117] border border-[#30363d] rounded-xl px-4 py-2.5 text-white text-center text-sm placeholder-[#484f58] outline-none focus:border-[#e63946] transition-colors"
-            />
+            <button
+              onClick={handlePlay}
+              disabled={!nickname.trim()}
+              className="w-full bg-[#e63946] hover:bg-[#d62839] disabled:opacity-40 disabled:hover:bg-[#e63946] text-white font-bold text-[17px] tracking-[0.01em] py-[18px] rounded-[14px] transition-colors"
+              style={{ boxShadow: ctaShadow }}
+            >
+              Play today's session
+            </button>
+
+            <p className="text-center text-xs text-[#535862]">
+              New set every day at midnight
+            </p>
           </div>
-
-          <button
-            onClick={handlePlay}
-            disabled={!nickname.trim()}
-            className="bg-[#e63946] hover:bg-[#d62839] disabled:opacity-40 disabled:hover:bg-[#e63946] text-white font-bold text-base px-10 py-3.5 rounded-xl transition-all hover:scale-105 active:scale-95 shadow-[0_0_30px_rgba(230,57,70,0.3)]"
-          >
-            Play Today's Session
-          </button>
-
-          <p className="text-[#484f58] text-xs mt-4">
-            A new session drops every day at midnight
-          </p>
-        </>
-      )}
+        )}
+      </div>
 
       {showModal && (
         <LeaderboardModal
@@ -219,7 +188,6 @@ export default function IntroScreen({ session, streak, onStart }: IntroScreenPro
         <HowToPlay onClose={() => {
           setShowHowTo(false)
           try { localStorage.setItem('bernie_seen_howtoplay', '1') } catch {}
-          // If this was triggered by Play button (first time), start the game
           if (!hasSeenHowTo && nickname.trim()) {
             startGame()
           }
@@ -246,6 +214,6 @@ export default function IntroScreen({ session, streak, onStart }: IntroScreenPro
         onClose={() => setShowFeedback(false)}
         initialCategory={feedbackCategory}
       />
-    </div>
+    </>
   )
 }

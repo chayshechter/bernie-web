@@ -14,10 +14,15 @@
   --color-warn: #f97316;
   --color-streak: #f59e0b;
   --color-streak-bg: #1a1200;
+
+  --font-body: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Archivo Black", "Manrope", ui-sans-serif, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
 }
 
 html, body {
   background: #0d1117;
+  font-family: var(--font-body);
 }
 
 #root {

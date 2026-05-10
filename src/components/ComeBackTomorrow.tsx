@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
-import { themeWithEmoji } from '../lib/themes'
 import { getMsUntilMidnightEastern, formatCountdown, getTomorrowEastern } from '../lib/date'
 
 function isMobile(): boolean {
@@ -53,62 +52,45 @@ export default function ComeBackTomorrow() {
 
   return (
     <>
-      <div
-        className="w-full max-w-lg rounded-2xl overflow-hidden"
-        style={{ background: '#1a1200', borderTop: '3px solid #f59e0b' }}
-      >
-        {streak > 0 ? (
-          <div className="flex items-center px-4 py-5">
-            {/* Left — Streak */}
-            <div className="flex-1 text-center">
-              <div className="text-3xl leading-none mb-1">🔥</div>
-              <div className="text-4xl font-black text-white leading-tight">{streak}</div>
-              <p className="text-[#f59e0b] text-xs mt-0.5">day streak</p>
-              {streakLabel && (
-                <p className="text-[#f59e0b]/70 text-[10px] mt-0.5">{streakLabel}</p>
-              )}
+      {streak > 0 ? (
+        <div className="w-full rounded-2xl border border-[rgba(245,158,11,0.55)] bg-[#1d1408] px-5 py-5 grid grid-cols-[1fr_1px_1.2fr] items-center gap-4">
+          <div>
+            <div className="flex items-baseline gap-2">
+              <span className="font-display text-[44px] leading-none text-[#f59e0b] tracking-[-0.02em]">{streak}</span>
+              <span className="text-[13px] font-semibold text-[#f59e0b] tracking-[0.04em]">day streak</span>
             </div>
-
-            {/* Divider */}
-            <div className="w-px self-stretch bg-[#f59e0b]/20 mx-3" />
-
-            {/* Right — Countdown */}
-            <div className="flex-1 text-center">
-              <p className="text-[#f59e0b] text-[9px] font-bold uppercase tracking-widest mb-1">
-                Next game in
-              </p>
-              <p className="text-white text-2xl font-black font-mono tracking-wider">
-                {countdown}
-              </p>
-              <p className="text-[#8b949e] text-[9px] mt-1 uppercase tracking-widest leading-tight">
-                Next up — {tomorrowTheme ? themeWithEmoji(tomorrowTheme) : 'Coming Soon'}
-              </p>
-            </div>
+            {streakLabel && (
+              <p className="mt-1.5 text-[11px] text-[#b97a07]">{streakLabel}</p>
+            )}
           </div>
-        ) : (
-          <div className="px-5 py-5 text-center">
-            <p className="text-[#f59e0b] text-[10px] font-bold uppercase tracking-widest mb-1">
-              Next game in
-            </p>
-            <p className="text-white text-3xl font-black font-mono tracking-wider">
-              {countdown}
-            </p>
-            <p className="text-[#8b949e] text-[9px] mt-1 uppercase tracking-widest">
-              Next up — {tomorrowTheme ? themeWithEmoji(tomorrowTheme) : 'Coming Soon'}
+          <div className="h-[60%] bg-[rgba(245,158,11,0.55)]" />
+          <div>
+            <p className="text-[10px] font-bold tracking-[0.18em] text-[#b97a07] mb-1.5">NEXT GAME IN</p>
+            <p className="font-mono text-[22px] font-semibold text-white tracking-[0.04em]">{countdown}</p>
+            <p className="mt-1.5 text-[11px] text-[#b97a07] tracking-[0.06em]">
+              NEXT UP — {(tomorrowTheme ?? 'Coming Soon').toUpperCase()}
             </p>
           </div>
-        )}
-      </div>
+        </div>
+      ) : (
+        <div className="w-full rounded-2xl border border-[rgba(245,158,11,0.55)] bg-[#1d1408] px-5 py-5 text-center">
+          <p className="text-[10px] font-bold tracking-[0.18em] text-[#b97a07] mb-1.5">NEXT GAME IN</p>
+          <p className="font-mono text-[28px] font-semibold text-white tracking-[0.04em]">{countdown}</p>
+          <p className="mt-1.5 text-[11px] text-[#b97a07] tracking-[0.06em]">
+            NEXT UP — {(tomorrowTheme ?? 'Coming Soon').toUpperCase()}
+          </p>
+        </div>
+      )}
 
       {/* Add to home screen nudge */}
       {showMobileNudge && (
         <div className="flex items-center justify-center gap-2 mt-3">
-          <p className="text-[#555] text-[11px]">
+          <p className="text-[#535862] text-[11px]">
             Tip: Add to home screen for quick daily access
           </p>
           <button
             onClick={dismissNudge}
-            className="text-[#555] text-[11px] hover:text-[#888] shrink-0"
+            className="text-[#535862] text-[11px] hover:text-[#888] shrink-0"
           >
             ✕
           </button>

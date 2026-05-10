@@ -1,5 +1,20 @@
 const TZ = 'America/New_York'
 
+export const LAUNCH_DATE = '2026-04-04'
+
+export function getPuzzleNumber(sessionDate: string): number {
+  const launch = new Date(LAUNCH_DATE + 'T00:00:00')
+  const session = new Date(sessionDate + 'T00:00:00')
+  return Math.floor((session.getTime() - launch.getTime()) / 86_400_000) + 1
+}
+
+export function formatIssueDate(sessionDate: string): string {
+  const d = new Date(sessionDate + 'T00:00:00')
+  const part = (opts: Intl.DateTimeFormatOptions) =>
+    new Intl.DateTimeFormat('en-US', opts).format(d).toUpperCase()
+  return `${part({ weekday: 'short' })} · ${part({ month: 'short' })} ${d.getDate()} · ${d.getFullYear()}`
+}
+
 function formatEastern(date: Date): string {
   return new Intl.DateTimeFormat('en-CA', {
     timeZone: TZ,
