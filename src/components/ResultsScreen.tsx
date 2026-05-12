@@ -8,6 +8,7 @@ import LeaderboardModal from './LeaderboardModal'
 import ComeBackTomorrow from './ComeBackTomorrow'
 import FeedbackModal from './FeedbackModal'
 import { Analytics } from '../lib/analytics'
+import { getDeviceId } from '../lib/deviceId'
 
 interface ResultsScreenProps {
   results: GuessResult[]
@@ -97,6 +98,7 @@ export default function ResultsScreen({
       nickname: name.trim(),
       guesses: results,
       total_score: totalScore,
+      device_id: getDeviceId(),
     })
 
     setSubmitting(false)
