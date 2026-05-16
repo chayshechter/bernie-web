@@ -1,5 +1,5 @@
 import { supabase } from './supabase'
-import type { ScoreTier } from '../types/community'
+import type { ScoreTier, ReactionKind } from '../types/community'
 
 // ---------------------------------------------------------------------------
 // Internal
@@ -11,6 +11,12 @@ async function requireUserId(): Promise<string> {
   const id = data.user?.id
   if (!id) throw new Error('Not authenticated')
   return id
+}
+
+// v1: most engagement is anonymous, so the user may legitimately be absent.
+async function getOptionalUserId(): Promise<string | null> {
+  const { data } = await supabase.auth.getUser()
+  return data.user?.id ?? null
 }
 
 const COMMENT_SELECT = `
@@ -121,15 +127,171 @@ export async function toggleCommentLike(commentId: string): Promise<boolean> {
 // Car votes
 // ---------------------------------------------------------------------------
 
-export async function voteOnCar(carId: string, vote: 'would' | 'wouldnt') {
-  const userId = await requireUserId()
-  const { error } = await supabase
+type Vote = 'would' | 'wouldnt'
+
+// Actor scoping: an authenticated user always wins; otherwise fall back to
+// the anon device_id. We do an explicit lookup → update/insert instead of
+// upsert because the uniqueness is enforced by *partial* unique indexes,
+// which PostgREST's on_conflict cannot target reliably.
+function actorMatch(
+  carId: string,
+  userId: string | null,
+  deviceId?: string,
+): Record<string, string> {
+  if (userId) return { car_id: carId, user_id: userId }
+  if (deviceId) return { car_id: carId, device_id: deviceId }
+  throw new Error('Need an authenticated user or a deviceId')
+}
+
+export async function voteOnCar(
+  carId: string,
+  vote: Vote,
+  deviceId?: string,
+) {
+  const userId = await getOptionalUserId()
+  const match = actorMatch(carId, userId, deviceId)
+
+  const { data: existing, error: lookupError } = await supabase
     .from('car_votes')
-    .upsert(
-      { car_id: carId, user_id: userId, vote },
-      { onConflict: 'car_id,user_id' }
-    )
+    .select('id')
+    .match(match)
+    .maybeSingle()
+  if (lookupError) throw lookupError
+
+  if (existing) {
+    const { error } = await supabase
+      .from('car_votes')
+      .update({ vote })
+      .eq('id', existing.id)
+    if (error) throw error
+    return
+  }
+
+  const { error } = await supabase.from('car_votes').insert({
+    car_id: carId,
+    user_id: userId,
+    device_id: userId ? null : deviceId,
+    vote,
+  })
   if (error) throw error
+}
+
+// ---------------------------------------------------------------------------
+// Car reactions
+// ---------------------------------------------------------------------------
+
+export async function reactOnCar(
+  carId: string,
+  reaction: ReactionKind,
+  deviceId?: string,
+) {
+  const userId = await getOptionalUserId()
+  const match = actorMatch(carId, userId, deviceId)
+
+  const { data: existing, error: lookupError } = await supabase
+    .from('car_reactions')
+    .select('id')
+    .match(match)
+    .maybeSingle()
+  if (lookupError) throw lookupError
+
+  if (existing) {
+    const { error } = await supabase
+      .from('car_reactions')
+      .update({ reaction })
+      .eq('id', existing.id)
+    if (error) throw error
+    return
+  }
+
+  const { error } = await supabase.from('car_reactions').insert({
+    car_id: carId,
+    user_id: userId,
+    device_id: userId ? null : deviceId,
+    reaction,
+  })
+  if (error) throw error
+}
+
+// ---------------------------------------------------------------------------
+// Combined engagement read
+// ---------------------------------------------------------------------------
+
+export interface CarEngagement {
+  votes: { would: number; wouldnt: number }
+  reactions: Record<ReactionKind, number>
+  userVote: Vote | null
+  userReaction: ReactionKind | null
+}
+
+const REACTION_KINDS: ReactionKind[] = ['fire', 'skull', 'heart_eyes', 'thinking']
+
+// `deviceId` is optional and only used to resolve the current anon player's
+// own vote/reaction; aggregate counts never depend on it. Calling
+// getCarEngagement(carId) with no deviceId still returns correct totals
+// (and resolves userVote/userReaction for authenticated players).
+export async function getCarEngagement(
+  carId: string,
+  deviceId?: string,
+): Promise<CarEngagement> {
+  const userId = await getOptionalUserId()
+
+  const [votesRes, reactionsRes] = await Promise.all([
+    supabase.from('car_votes').select('vote, user_id, device_id').eq('car_id', carId),
+    supabase
+      .from('car_reactions')
+      .select('reaction, user_id, device_id')
+      .eq('car_id', carId),
+  ])
+  if (votesRes.error) throw votesRes.error
+  if (reactionsRes.error) throw reactionsRes.error
+
+  const voteRows = votesRes.data ?? []
+  const reactionRows = reactionsRes.data ?? []
+
+  const reactions = REACTION_KINDS.reduce(
+    (acc, k) => ({ ...acc, [k]: 0 }),
+    {} as Record<ReactionKind, number>,
+  )
+  for (const r of reactionRows) {
+    if (r.reaction in reactions) reactions[r.reaction as ReactionKind] += 1
+  }
+
+  const isMine = (row: { user_id: string | null; device_id: string | null }) =>
+    userId ? row.user_id === userId : !!deviceId && row.device_id === deviceId
+
+  const myVote = voteRows.find(isMine)
+  const myReaction = reactionRows.find(isMine)
+
+  return {
+    votes: {
+      would: voteRows.filter((r) => r.vote === 'would').length,
+      wouldnt: voteRows.filter((r) => r.vote === 'wouldnt').length,
+    },
+    reactions,
+    userVote: (myVote?.vote as Vote) ?? null,
+    userReaction: (myReaction?.reaction as ReactionKind) ?? null,
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Email retention
+// ---------------------------------------------------------------------------
+
+// Re-subscribing with an already-known email is a no-op (handled gracefully
+// rather than surfacing the UNIQUE violation to the user).
+export async function subscribeEmail(email: string, deviceId?: string) {
+  const normalized = email.trim().toLowerCase()
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(normalized)) {
+    throw new Error('subscribeEmail: invalid email address')
+  }
+
+  const { error } = await supabase
+    .from('email_reminders')
+    .insert({ email: normalized, device_id: deviceId ?? null })
+
+  // 23505 = unique_violation → already subscribed, treat as success.
+  if (error && error.code !== '23505') throw error
 }
 
 export interface CarVoteCounts {

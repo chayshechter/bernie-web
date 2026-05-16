@@ -28,11 +28,34 @@ export interface Comment {
   replies?: Comment[]
 }
 
+export type ReactionKind = 'fire' | 'skull' | 'heart_eyes' | 'thinking'
+
 export interface CarVote {
   carId: string
-  userId: string
+  // Exactly one of userId / deviceId is set (anon vs. authed player).
+  userId?: string
+  deviceId?: string
   vote: 'would' | 'wouldnt'
   createdAt: string
+}
+
+export interface CarReaction {
+  id: string
+  carId: string
+  // Exactly one of userId / deviceId is set (anon vs. authed player).
+  userId?: string
+  deviceId?: string
+  reaction: ReactionKind
+  createdAt: string
+}
+
+export interface EmailReminder {
+  id: string
+  email: string
+  deviceId?: string
+  confirmed: boolean
+  createdAt: string
+  unsubscribedAt?: string
 }
 
 export interface DailySet {
