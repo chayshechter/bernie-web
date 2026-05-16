@@ -3,6 +3,11 @@ import { Analytics } from '@vercel/analytics/react'
 import Game from './pages/Game'
 import Admin from './pages/Admin'
 import DevCommunityPrimitives from './pages/DevCommunityPrimitives'
+import { syncCommunityFlagFromUrl } from './lib/featureFlag'
+
+// Persist any ?community=on/off URL param to localStorage once, before first
+// render, so the flag survives subsequent navigation without the query string.
+syncCommunityFlagFromUrl()
 
 export default function App() {
   return (

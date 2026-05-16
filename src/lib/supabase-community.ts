@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { getTodayEastern, getTodayStartEastern } from './date'
 import type { ScoreTier, ReactionKind } from '../types/community'
 
 // ---------------------------------------------------------------------------
@@ -329,6 +330,56 @@ export async function getProfile(username: string) {
     .maybeSingle()
   if (error) throw error
   return data
+}
+
+// ---------------------------------------------------------------------------
+// Rank + tomorrow's theme (results screen v2)
+// ---------------------------------------------------------------------------
+
+export interface RankInfo {
+  rank: number
+  /** "Top N%" figure (1–100); 1 == best. */
+  percentile: number
+  totalPlayers: number
+}
+
+// NOTE: scores are written to user_scores keyed by `session_date` (the daily
+// set's date string), and anon rows carry no daily_set_id. So ranking is done
+// by session_date + today's Eastern start, mirroring the existing
+// ResultsScreen leaderboard query rather than joining on daily_sets.id.
+export async function getRankInfo(
+  score: number,
+  sessionDate: string,
+): Promise<RankInfo> {
+  const { data, error } = await supabase
+    .from('user_scores')
+    .select('total_score')
+    .eq('session_date', sessionDate)
+    .gte('created_at', getTodayStartEastern())
+    .not('nickname', 'ilike', 'DEV_%')
+  if (error) throw error
+
+  const scores = (data ?? []).map((r) => r.total_score as number)
+  const totalPlayers = scores.length
+  const higher = scores.filter((s) => s > score).length
+  const rank = higher + 1
+  const percentile =
+    totalPlayers === 0 ? 100 : Math.max(1, Math.round((rank / totalPlayers) * 100))
+
+  return { rank, percentile, totalPlayers }
+}
+
+/** theme_name of the next daily set after today, or null if none scheduled. */
+export async function getTomorrowTheme(): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('daily_sets')
+    .select('theme_name')
+    .gt('date', getTodayEastern())
+    .order('date', { ascending: true })
+    .limit(1)
+    .maybeSingle()
+  if (error) throw error
+  return data?.theme_name ?? null
 }
 
 export type ProfileUpdates = Partial<{
