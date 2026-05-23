@@ -1,5 +1,5 @@
 import { Resend } from 'resend';
-import { supabaseAdmin } from '../_lib/supabase-admin';
+import { supabaseAdmin } from '../_lib/supabase-admin.js';
 
 const SITE_URL = 'https://berniedaily.com';
 const FROM = 'BERNIE <hello@berniedaily.com>';
