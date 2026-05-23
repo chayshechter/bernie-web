@@ -1,13 +1,18 @@
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { supabaseAdmin } from './_lib/supabase-admin.js';
 
 const SITE_URL = 'https://berniedaily.com';
 
-export default async function handler(req: Request): Promise<Response> {
-  const url = new URL(req.url);
-  const token = url.searchParams.get('token');
+export default async function handler(
+  req: VercelRequest,
+  res: VercelResponse,
+): Promise<void> {
+  const rawToken = req.query.token;
+  const token = typeof rawToken === 'string' ? rawToken : undefined;
 
   if (!token) {
-    return htmlResponse(notFoundPage(), 404);
+    sendHtml(res, 404, notFoundPage());
+    return;
   }
 
   const { data, error } = await supabaseAdmin
@@ -19,22 +24,22 @@ export default async function handler(req: Request): Promise<Response> {
 
   if (error) {
     console.error('[unsubscribe] db error:', error);
-    return htmlResponse(notFoundPage(), 500);
+    sendHtml(res, 500, notFoundPage());
+    return;
   }
 
   if (!data) {
-    return htmlResponse(notFoundPage(), 404);
+    sendHtml(res, 404, notFoundPage());
+    return;
   }
 
   console.log(`[unsubscribe] success for ${data.email}`);
-  return htmlResponse(confirmationPage(), 200);
+  sendHtml(res, 200, confirmationPage());
 }
 
-function htmlResponse(body: string, status: number): Response {
-  return new Response(body, {
-    status,
-    headers: { 'content-type': 'text/html; charset=utf-8' },
-  });
+function sendHtml(res: VercelResponse, status: number, body: string): void {
+  res.setHeader('content-type', 'text/html; charset=utf-8');
+  res.status(status).send(body);
 }
 
 function shell(title: string, heading: string, body: string): string {

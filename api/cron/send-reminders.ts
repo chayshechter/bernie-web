@@ -1,3 +1,4 @@
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Resend } from 'resend';
 import { supabaseAdmin } from '../_lib/supabase-admin.js';
 
@@ -10,10 +11,14 @@ type Subscriber = {
   unsubscribe_token: string;
 };
 
-export default async function handler(req: Request): Promise<Response> {
-  const auth = req.headers.get('authorization');
+export default async function handler(
+  req: VercelRequest,
+  res: VercelResponse,
+): Promise<void> {
+  const auth = req.headers.authorization;
   if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
-    return new Response('Unauthorized', { status: 401 });
+    res.status(401).send('Unauthorized');
+    return;
   }
 
   const resend = new Resend(process.env.RESEND_API_KEY);
@@ -25,10 +30,8 @@ export default async function handler(req: Request): Promise<Response> {
 
   if (error) {
     console.error('[cron] failed to query email_reminders:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { 'content-type': 'application/json' },
-    });
+    res.status(500).json({ error: error.message });
+    return;
   }
 
   const subscribers = (data ?? []) as Subscriber[];
@@ -61,10 +64,7 @@ export default async function handler(req: Request): Promise<Response> {
   const summary = { total: subscribers.length, sent, failed };
   console.log('[cron] summary:', summary);
 
-  return new Response(JSON.stringify(summary), {
-    status: 200,
-    headers: { 'content-type': 'application/json' },
-  });
+  res.status(200).json(summary);
 }
 
 function renderEmail(unsubscribeUrl: string): string {
