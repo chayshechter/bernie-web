@@ -494,7 +494,7 @@ export default function ResultsScreenV2({
               <span className="w-5 h-5 rounded-full bg-success/15 text-success inline-flex items-center justify-center text-[12px] font-black">
                 ✓
               </span>
-              You&apos;re on the list — we&apos;ll ping you at 9am.
+              You&apos;re on the list — we&apos;ll ping you at 9am ET.
             </div>
             <p className="text-muted text-[11.5px] mt-2">
               Unsubscribe anytime from any email.
@@ -503,7 +503,7 @@ export default function ResultsScreenV2({
         ) : (
           <>
             <h3 className="mt-1.5 mb-1 text-[17px] font-bold tracking-[-0.01em]">
-              Drop your email. We&apos;ll ping you at 9am.
+              Drop your email. We&apos;ll ping you at 9am ET.
             </h3>
             <div className="flex gap-2 mt-3">
               <input
@@ -653,7 +653,7 @@ export default function ResultsScreenV2({
               <span className="w-[22px] h-[22px] rounded-full bg-success/20 inline-flex items-center justify-center text-[13px] font-black text-success">
                 ✓
               </span>
-              We&apos;ll remind you at 9am
+              We&apos;ll remind you at 9am ET
             </div>
           ) : (
             <button
