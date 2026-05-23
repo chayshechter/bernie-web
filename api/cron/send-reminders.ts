@@ -3,6 +3,7 @@ import { Resend } from 'resend';
 import { supabaseAdmin } from '../_lib/supabase-admin.js';
 
 const SITE_URL = 'https://berniedaily.com';
+const PLAY_URL = `${SITE_URL}/?utm_source=email&utm_medium=reminder&utm_campaign=daily`;
 const FROM = 'BERNIE <hello@berniedaily.com>';
 const SUBJECT = "Today's BERNIE is live";
 
@@ -88,7 +89,7 @@ function renderEmail(unsubscribeUrl: string): string {
           </tr>
           <tr>
             <td align="center" style="padding-bottom:8px;">
-              <a href="${SITE_URL}" style="display:inline-block;background:#e63946;color:#ffffff;text-decoration:none;font-weight:700;font-size:16px;padding:14px 28px;border-radius:8px;">Play today's BERNIE</a>
+              <a href="${PLAY_URL}" style="display:inline-block;background:#e63946;color:#ffffff;text-decoration:none;font-weight:700;font-size:16px;padding:14px 28px;border-radius:8px;">Play today's BERNIE</a>
             </td>
           </tr>
         </table>
@@ -111,7 +112,7 @@ function renderEmailText(unsubscribeUrl: string): string {
   return [
     "A new BERNIE puzzle is live.",
     '',
-    `Play today's BERNIE: ${SITE_URL}`,
+    `Play today's BERNIE: ${PLAY_URL}`,
     '',
     `Unsubscribe: ${unsubscribeUrl}`,
   ].join('\n');
