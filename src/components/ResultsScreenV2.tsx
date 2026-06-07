@@ -20,6 +20,10 @@ import ScoreBadge from './community/ScoreBadge'
 import StatsStrip from './community/StatsStrip'
 import VoteBar from './community/VoteBar'
 import LeaderboardModal from './LeaderboardModal'
+import HowToPlay from './HowToPlay'
+import FeedbackModal from './FeedbackModal'
+import HelpMenu from './HelpMenu'
+import type { HelpAction } from './HelpMenu'
 
 interface ResultsScreenV2Props {
   results: GuessResult[]
@@ -149,6 +153,11 @@ export default function ResultsScreenV2({
   const [leaderboard, setLeaderboard] = useState<UserScore[]>([])
   const [showModal, setShowModal] = useState(false)
   const [shared, setShared] = useState(false)
+
+  const [showHowTo, setShowHowTo] = useState(false)
+  const [showFeedback, setShowFeedback] = useState(false)
+  const [showHelpMenu, setShowHelpMenu] = useState(false)
+  const [feedbackCategory, setFeedbackCategory] = useState<'bug' | 'suggestion'>('suggestion')
 
   const heroRef = useRef<HTMLDivElement>(null)
   const [showSticky, setShowSticky] = useState(false)
@@ -337,7 +346,16 @@ export default function ResultsScreenV2({
   const nextUpTheme = tomorrowTheme ?? 'a fresh set'
 
   return (
-    <div className="min-h-screen bg-base text-white pb-24">
+    <div className="min-h-screen bg-base text-white pb-24 relative">
+      <div className="absolute top-3 right-3 flex items-center gap-2 z-10">
+        <button
+          onClick={() => setShowHelpMenu(true)}
+          className="w-7 h-7 rounded-full bg-[#161b22] border border-[#30363d] text-[#8b949e] text-xs font-bold flex items-center justify-center hover:text-white transition-colors"
+          aria-label="Help menu"
+        >
+          ?
+        </button>
+      </div>
       <style>{`
         @keyframes v2-flip-in {
           0%   { transform: translateY(-40%) rotateX(-80deg); opacity: 0 }
@@ -701,6 +719,34 @@ export default function ResultsScreenV2({
           currentScore={totalScore}
         />
       )}
+
+      {showHowTo && <HowToPlay onClose={() => setShowHowTo(false)} />}
+
+      {showHelpMenu && (
+        <HelpMenu
+          onClose={() => setShowHelpMenu(false)}
+          onSelect={(action: HelpAction) => {
+            setShowHelpMenu(false)
+            if (action === 'how-to-play') {
+              setShowHowTo(true)
+            } else {
+              setFeedbackCategory(action === 'bug' ? 'bug' : 'suggestion')
+              setShowFeedback(true)
+            }
+          }}
+        />
+      )}
+
+      <FeedbackModal
+        isOpen={showFeedback}
+        onClose={() => setShowFeedback(false)}
+        initialCategory={feedbackCategory}
+        context={{
+          final_score: totalScore,
+          last_car_id: results.length > 0 ? results[results.length - 1].car_id : null,
+          screen: 'results',
+        }}
+      />
     </div>
   )
 }
