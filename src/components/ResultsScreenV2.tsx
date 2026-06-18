@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Car, GuessResult, UserScore } from '../lib/types'
-import type { ScoreTier, ReactionKind } from '../types/community'
+import type { ScoreTier } from '../types/community'
 import { generateShareText } from '../lib/scoring'
 import { supabase } from '../lib/supabase'
 import { DEV_MODE } from '../lib/devmode'
@@ -13,12 +13,7 @@ import {
 import { Analytics } from '../lib/analytics'
 import { getDeviceId } from '../lib/deviceId'
 import { useCountdown } from '../lib/useCountdown'
-import { useCarEngagement } from '../lib/useEngagement'
 import { getRankInfo, getTomorrowTheme, subscribeEmail } from '../lib/supabase-community'
-import SectionHeader from './community/SectionHeader'
-import ScoreBadge from './community/ScoreBadge'
-import StatsStrip from './community/StatsStrip'
-import VoteBar from './community/VoteBar'
 import LeaderboardModal from './LeaderboardModal'
 import HowToPlay from './HowToPlay'
 import FeedbackModal from './FeedbackModal'
@@ -53,13 +48,6 @@ function seenTodayFlag(sessionDate: string): boolean {
   }
 }
 
-const REACTIONS: { key: ReactionKind; emoji: string }[] = [
-  { key: 'fire', emoji: '🔥' },
-  { key: 'skull', emoji: '💀' },
-  { key: 'heart_eyes', emoji: '😍' },
-  { key: 'thinking', emoji: '🤔' },
-]
-
 function tierForScore(score: number): ScoreTier {
   if (score >= 95) return 'perfect'
   if (score >= 80) return 'strong'
@@ -74,6 +62,27 @@ const STRIP_COLOR: Record<ScoreTier, string> = {
   close: 'bg-streak',
   miss: 'bg-warn',
   cold: 'bg-brand',
+}
+
+// Points text color, mapped to the same tiers as the scorecard squares so a
+// glance at a car cell reads consistently with the colored strip up top.
+const TIER_TEXT: Record<ScoreTier, string> = {
+  perfect: 'text-success',
+  strong: 'text-success',
+  close: 'text-streak',
+  miss: 'text-warn',
+  cold: 'text-brand',
+}
+
+// Compact currency for the dense 2-col grid: "$32.5k", "$120k", "$950".
+function compactPrice(n: number): string {
+  if (!n) return '$0'
+  if (n >= 1000) {
+    const k = n / 1000
+    const val = k >= 100 ? String(Math.round(k)) : k.toFixed(1).replace(/\.0$/, '')
+    return `$${val}k`
+  }
+  return `$${Math.round(n)}`
 }
 
 function resolveCarImage(car: Car): string | null {
@@ -91,12 +100,6 @@ function resolveCarImage(car: Car): string | null {
     return imgs
   }
   return null
-}
-
-function specsLine(car: Car): string {
-  const s = car.specs
-  if (!s) return ''
-  return [s.Engine, s.Mileage, s.Transmission].filter(Boolean).join(' · ')
 }
 
 // ─── streak snapshot (read once, before the DB write touches localStorage) ──
@@ -385,83 +388,56 @@ export default function ResultsScreenV2({
         </div>
       </div>
 
-      {/* streak hero */}
-      <div ref={heroRef}>
+      {/* streak band (compact — keeps streak + countdown in the screenshot
+          without eating a full viewport; full "don't break it" hero lives
+          below the scorecard) */}
+      <div ref={heroRef} className="mt-4 mx-4">
         <div
-          className="relative overflow-hidden mt-5 mx-4 rounded-[18px] px-[22px] pt-[22px] pb-5 bg-streak-bg"
+          className="flex items-center justify-center gap-2.5 rounded-full px-4 py-2 bg-streak-bg text-streak text-[12px] font-bold tracking-[0.06em]"
           style={{ border: '1px solid color-mix(in oklab, #f59e0b 35%, transparent)' }}
         >
-          <div
-            className="pointer-events-none absolute inset-0"
-            style={{
-              background:
-                'radial-gradient(120% 80% at 0% 0%, rgba(245,158,11,.10), transparent 60%)',
-            }}
-          />
-          <div className="relative text-center">
-            <div className="text-streak text-[10px] tracking-[0.18em] uppercase font-semibold mb-1.5">
-              <span className="mr-1">🔥</span> STREAK
-            </div>
-            <div className="text-white font-display font-black leading-[0.85] tracking-[-0.05em] text-[108px]">
-              <span key={streak} className={justTicked ? 'v2-flip' : ''}>
-                {streak}
-              </span>
-            </div>
-            <div className="text-streak font-semibold text-sm mt-1.5">day streak</div>
-            {justTicked && (
-              <div className="v2-pulse inline-flex items-center gap-1.5 mt-2.5 rounded-full px-2.5 py-1 text-[11px] font-bold tracking-[0.04em] text-streak bg-streak/15">
-                +1 — KEEP IT GOING
-              </div>
-            )}
-
-            <div
-              className="my-[16px] h-px"
-              style={{ background: 'color-mix(in oklab, #f59e0b 22%, transparent)' }}
-            />
-
-            <div className="text-streak text-[10px] tracking-[0.18em] uppercase font-semibold mb-2">
-              NEXT SET IN
-            </div>
-            <div className="font-mono tabular-nums text-[34px] font-extrabold text-white tracking-[0.02em]">
-              <span>{String(countdown.hours).padStart(2, '0')}</span>
-              <span className="text-streak">:</span>
-              <span>{String(countdown.minutes).padStart(2, '0')}</span>
-              <span className="text-streak">:</span>
-              <span>{String(countdown.seconds).padStart(2, '0')}</span>
-            </div>
-            <div className="text-streak text-[13px] font-semibold mt-2.5">
-              Don&apos;t break it.
-            </div>
-            <div className="text-muted text-[13px] italic mt-2.5">
-              Next up — <b className="text-body not-italic font-semibold">{nextUpTheme}</b>
-            </div>
-          </div>
+          <span className="whitespace-nowrap">🔥 STREAK {streak}</span>
+          <span className="text-streak/45">·</span>
+          <span className="font-mono tabular-nums whitespace-nowrap">
+            NEXT {String(countdown.hours).padStart(2, '0')}:
+            {String(countdown.minutes).padStart(2, '0')}:
+            {String(countdown.seconds).padStart(2, '0')}
+          </span>
         </div>
+        {justTicked && (
+          <div className="text-center mt-2">
+            <span className="v2-pulse inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold tracking-[0.04em] text-streak bg-streak/15">
+              +1 — KEEP IT GOING
+            </span>
+          </div>
+        )}
       </div>
 
       {/* score block */}
-      <div className="px-4 pt-[34px] pb-2 text-center">
-        <div className="text-muted text-[10px] tracking-[0.18em] uppercase font-semibold mb-3.5">
+      <div className="px-4 pt-5 pb-1 text-center">
+        <div className="text-muted text-[10px] tracking-[0.18em] uppercase font-semibold mb-2">
           YOUR SCORE
         </div>
-        <div className="text-white font-display font-black text-[96px] leading-[0.9] tracking-[-0.04em]">
-          {totalScore}
+        <div className="flex items-baseline justify-center gap-2">
+          <span className="text-white font-display font-black text-[64px] leading-[0.9] tracking-[-0.04em]">
+            {totalScore}
+          </span>
+          <span className="text-faint font-mono text-base font-semibold tracking-[0.04em]">
+            / 1000
+          </span>
         </div>
-        <div className="text-faint font-mono text-lg font-semibold mt-1 tracking-[0.04em]">
-          / 1000
-        </div>
-        <div className="text-muted text-[13px] mt-3.5">
+        <div className="text-muted text-[12px] mt-2">
           {rankLabel && <span className="text-white font-bold">{rankLabel}</span>}
           {rankLabel && playedCount ? <span className="text-faint mx-1.5">·</span> : null}
           {playedCount ? <span>{playedCount} played</span> : null}
         </div>
-        <div className="flex justify-center gap-1.5 mt-4">
+        <div className="flex justify-center gap-1.5 mt-3">
           {cars.map((c) => {
             const score = resultByCar.get(c.id)?.score ?? 0
             return (
               <div
                 key={c.id}
-                className={`w-6 h-6 rounded-[5px] ${STRIP_COLOR[tierForScore(score)]}`}
+                className={`w-5 h-5 rounded-[5px] ${STRIP_COLOR[tierForScore(score)]}`}
                 style={{ boxShadow: 'inset 0 -2px 0 rgba(0,0,0,.25)' }}
               />
             )
@@ -499,6 +475,36 @@ export default function ResultsScreenV2({
             </div>
           </div>
         )}
+      </div>
+
+      {/* car grid — compact 2-col so all 10 cars + the score above fit in
+          roughly one phone screenshot */}
+      <div className="grid grid-cols-2 gap-2 px-4 pt-4">
+        {cars.map((car, i) => (
+          <CompactCarCell
+            key={car.id}
+            car={car}
+            pos={i + 1}
+            result={resultByCar.get(car.id)}
+          />
+        ))}
+      </div>
+
+      {/* ── below the fold: everything that shouldn't land in the screenshot ── */}
+
+      {/* share CTA */}
+      <div className="px-4 pt-5">
+        <button
+          onClick={handleShare}
+          className="w-full flex items-center justify-center gap-2.5 bg-brand hover:bg-brand-hover active:translate-y-px text-white rounded-xl py-4 text-base font-bold transition-all"
+          style={{
+            boxShadow:
+              '0 0 0 4px rgba(230,57,70,.08), 0 0 24px rgba(230,57,70,.35)',
+          }}
+        >
+          <span className="text-xl leading-none">🏎️</span>
+          {shared ? 'Copied!' : 'Share My Score'}
+        </button>
       </div>
 
       {/* reminder card */}
@@ -548,39 +554,6 @@ export default function ResultsScreenV2({
             )}
           </>
         )}
-      </div>
-
-      {/* share CTA */}
-      <div className="px-4 pt-4">
-        <button
-          onClick={handleShare}
-          className="w-full flex items-center justify-center gap-2.5 bg-brand hover:bg-brand-hover active:translate-y-px text-white rounded-xl py-4 text-base font-bold transition-all"
-          style={{
-            boxShadow:
-              '0 0 0 4px rgba(230,57,70,.08), 0 0 24px rgba(230,57,70,.35)',
-          }}
-        >
-          <span className="text-xl leading-none">🏎️</span>
-          {shared ? 'Copied!' : 'Share My Score'}
-        </button>
-      </div>
-
-      {/* car feed */}
-      <div className="px-4 pt-[34px] pb-3.5">
-        <SectionHeader
-          label={`TODAY'S SET · ${cars.length} CARS`}
-          rightText={themeName.toUpperCase()}
-        />
-      </div>
-      <div className="flex flex-col gap-3.5 px-4">
-        {cars.map((car, i) => (
-          <CarFeedCard
-            key={car.id}
-            car={car}
-            pos={i + 1}
-            result={resultByCar.get(car.id)}
-          />
-        ))}
       </div>
 
       {/* leaderboard (deprioritized) */}
@@ -751,8 +724,12 @@ export default function ResultsScreenV2({
   )
 }
 
-// ─── car card ───────────────────────────────────────────────────────────────
-function CarFeedCard({
+// ─── compact car cell (2-col grid) ──────────────────────────────────────────
+// Thumbnail + name + guess→sold + tier-colored points, sized so all 10 cars
+// land inside one phone screenshot. The guess→sold row is the payload of a
+// shared scorecard, so it owns a full-width line that never wraps or
+// truncates; only the car name is allowed to clip when space is tight.
+function CompactCarCell({
   car,
   pos,
   result,
@@ -761,19 +738,13 @@ function CarFeedCard({
   pos: number
   result?: GuessResult
 }) {
-  const eng = useCarEngagement(car.id)
   const img = resolveCarImage(car)
   const score = result?.score ?? 0
   const tier = tierForScore(score)
-  const specs = specsLine(car)
-
-  const totalVotes = eng.votes.would + eng.votes.wouldnt
-  const wouldPct =
-    totalVotes === 0 ? 0 : Math.round((eng.votes.would / totalVotes) * 100)
 
   return (
-    <div className="bg-surface-1 border border-default rounded-[14px] overflow-hidden">
-      <div className="relative w-full aspect-video overflow-hidden bg-[#0a0d12]">
+    <div className="flex bg-surface-1 border border-default rounded-[10px] overflow-hidden">
+      <div className="relative w-[58px] shrink-0 bg-[#0a0d12]">
         {img ? (
           <img src={img} alt="" className="absolute inset-0 w-full h-full object-cover" />
         ) : (
@@ -785,65 +756,29 @@ function CarFeedCard({
             }}
           />
         )}
-        <div className="absolute top-2.5 left-2.5 bg-black/60 backdrop-blur-md border border-white/10 text-white font-extrabold text-xs px-2.5 py-1 rounded-md">
+        <div className="absolute top-1 left-1 bg-black/60 backdrop-blur-md text-white font-extrabold text-[9px] px-1 py-px rounded">
           #{pos}
-        </div>
-        <div className="absolute top-2.5 right-2.5">
-          <ScoreBadge tier={tier} />
-        </div>
-        <div className="absolute left-3.5 bottom-3 font-mono text-[10px] text-white/55 tracking-[0.08em] uppercase">
-          {car.year} · {car.make}
         </div>
       </div>
 
-      <div className="px-4 pt-3.5 pb-4">
-        <div className="text-[18px] font-bold tracking-[-0.01em] leading-tight">
-          {car.year} {car.make} {car.model}
-        </div>
-        {specs && <div className="text-muted text-[11.5px] mt-1.5">{specs}</div>}
-
-        <div className="mt-3.5">
-          <StatsStrip
-            yourGuess={result?.guess ?? 0}
-            soldFor={result?.actual ?? 0}
-            points={score}
-          />
-        </div>
-
-        <div className="mt-3.5">
-          <VoteBar
-            wouldPct={wouldPct}
-            wouldntPct={100 - wouldPct}
-            totalVotes={totalVotes}
-            userVote={eng.userVote}
-            onVote={eng.vote}
-          />
+      <div className="flex-1 min-w-0 px-2.5 py-2">
+        {/* name (truncates) + points (tier-colored, never clipped) */}
+        <div className="flex items-start justify-between gap-1.5">
+          <div className="min-w-0 truncate text-[12.5px] font-bold leading-tight">
+            {car.year} {car.make} {car.model}
+          </div>
+          <div
+            className={`shrink-0 text-[13px] font-extrabold tabular-nums leading-none ${TIER_TEXT[tier]}`}
+          >
+            {score}
+          </div>
         </div>
 
-        <div className="grid grid-cols-4 gap-2 mt-3.5">
-          {REACTIONS.map(({ key, emoji }) => {
-            const active = eng.userReaction === key
-            return (
-              <button
-                key={key}
-                onClick={() => eng.react(key)}
-                className={`flex flex-col items-center gap-1 rounded-[10px] py-2 px-1 border transition-all ${
-                  active
-                    ? 'bg-brand/10 border-brand/55'
-                    : 'bg-base border-[#252a32] hover:border-hover hover:-translate-y-px'
-                }`}
-              >
-                <span className="text-xl leading-none">{emoji}</span>
-                <span
-                  className={`text-[11px] font-semibold tabular-nums ${
-                    active ? 'text-brand font-extrabold' : 'text-muted'
-                  }`}
-                >
-                  {eng.reactions[key].toLocaleString()}
-                </span>
-              </button>
-            )
-          })}
+        {/* guess → sold: full-width, never wraps or truncates */}
+        <div className="mt-1.5 flex items-baseline gap-1 text-[11px] tabular-nums whitespace-nowrap">
+          <span className="text-muted">{compactPrice(result?.guess ?? 0)}</span>
+          <span className="text-faint">→</span>
+          <span className="text-white font-semibold">{compactPrice(result?.actual ?? 0)}</span>
         </div>
       </div>
     </div>
